@@ -1,0 +1,15 @@
+services:
+  - type: web
+    name: secure-browser
+    runtime: node
+    plan: free
+    buildCommand: npm install --omit=dev
+    startCommand: npm start
+    healthCheckPath: /healthz
+    envVars:
+      - key: NODE_ENV
+        value: production
+      - key: NODE_VERSION
+        value: '22'
+      - key: PROXY_TIMEOUT_MS
+        value: '12000'

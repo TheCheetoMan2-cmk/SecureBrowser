@@ -1,0 +1,20 @@
+{
+  "name": "secure-browser-proxy",
+  "version": "1.0.0",
+  "description": "Secure Browser with Secure Search, Input Summary, and an Express proxy, configured for Render hosting.",
+  "main": "server.js",
+  "license": "MIT",
+  "engines": {
+    "node": ">=20"
+  },
+  "scripts": {
+    "start": "node server.js",
+    "dev": "node --watch server.js",
+    "test": "node tests/question-summary.test.cjs && node tests/why-answer.test.cjs && node tests/media-search.test.cjs && node tests/inappropriate-summary.test.cjs"
+  },
+  "dependencies": {
+    "axios": "^1.7.2",
+    "express": "^4.19.2",
+    "jsdom": "^24.1.0"
+  }
+}

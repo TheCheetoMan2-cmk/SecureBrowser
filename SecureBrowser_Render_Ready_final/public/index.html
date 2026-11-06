@@ -1,0 +1,1133 @@
+<!DOCTYPE html>
+
+<html><head><meta charset="utf-8"/><meta content="width=device-width,initial-scale=1,viewport-fit=cover,user-scalable=yes" name="viewport"/><title>Secure Browser</title>
+<style>
+:root{--accent:#4f8cff;--bg:#0f1115;--bar:#181b22;--fg:#e8eaf0;--mut:#8b91a0;--line:#2a2e38}
+:root.light{--bg:#f4f5f8;--bar:#fff;--fg:#1b1e26;--mut:#6b7180;--line:#dfe2ea}
+*{box-sizing:border-box}html,body{margin:0;height:100%;font:14px system-ui,sans-serif;background:var(--bg);color:var(--fg);overflow:hidden;transition:background .3s,color .3s}
+body{display:flex;flex-direction:column}
+button{font:inherit;color:inherit;background:none;border:0;cursor:pointer;border-radius:8px;padding:6px 10px;transition:background .15s,transform .12s}
+button:hover{background:var(--line)}button:active{transform:scale(.88)}
+#tabs{display:flex;align-items:flex-end;padding:6px 8px 0;background:var(--bar);transition:background .3s}
+#tablist{display:flex;align-items:center;gap:4px;overflow:hidden;flex:1}
+.tab{flex:0 1 210px;min-width:44px;max-width:210px;display:flex;align-items:center;gap:8px;padding:8px 10px;border-radius:10px 10px 0 0;color:var(--mut);cursor:pointer;
+  position:relative;transition:background .2s,color .2s,transform .15s;animation:tin .28s cubic-bezier(.2,.9,.3,1.2)}
+.tab:hover{background:var(--line);transform:translateY(-1px)}
+.tab.on{background:var(--bg);color:var(--fg)}
+.tab::after{content:"";position:absolute;left:0;right:0;top:0;height:2px;background:var(--accent);transform:scaleX(0);transition:transform .25s}
+.tab.on::after{transform:scaleX(1)}
+.tab img{width:16px;height:16px;border-radius:3px;flex:none;animation:fade .3s}
+.tab span{overflow:hidden;white-space:nowrap;text-overflow:ellipsis;flex:1}
+.tab b{font-weight:400;opacity:.5;border-radius:50%;width:18px;height:18px;line-height:18px;text-align:center;transition:.15s}
+.tab b:hover{opacity:1;background:#ff5f5f55;transform:rotate(90deg)}
+.tab.leave{animation:tout .2s ease forwards;pointer-events:none}
+@keyframes tin{from{opacity:0;transform:translateY(10px) scaleX(.5);max-width:0}}
+@keyframes tout{to{opacity:0;transform:scaleX(.4);flex-basis:0;min-width:0;max-width:0;padding:0}}
+#nt{flex:none;font-size:18px;padding:4px 10px;border-radius:50%}#nt:hover{transform:rotate(90deg)}
+#bar{display:flex;gap:4px;align-items:center;padding:6px 8px;background:var(--bg);border-bottom:1px solid var(--line);transition:background .3s}
+#urlwrap{flex:1;display:flex;align-items:center;gap:8px;background:var(--bar);border:1px solid var(--line);border-radius:20px;padding:0 6px 0 14px;transition:border-color .2s,box-shadow .2s}
+#urlwrap:focus-within{border-color:var(--accent);box-shadow:0 0 0 3px color-mix(in srgb,var(--accent) 25%,transparent)}
+#url{flex:1;background:none;border:0;outline:0;color:var(--fg);font:inherit;padding:8px 0}
+#star.on{color:#ffc933;animation:pop .35s}
+@keyframes pop{50%{transform:scale(1.6) rotate(20deg)}}
+button.tool{border:1px solid #000;background:var(--bar);padding:5px 9px;border-radius:10px;font-size:15px;margin-left:2px}
+:root:not(.light) button.tool{box-shadow:0 0 0 1px #ffffff33}
+button.tool:hover{background:var(--line)}
+#extbuttons{display:flex;align-items:center;gap:3px;max-width:min(230px,22vw);overflow-x:auto;overflow-y:hidden;flex:none;scrollbar-width:none}
+#extbuttons::-webkit-scrollbar{display:none}
+.ext-toolbar-button{position:relative;display:flex;align-items:center;justify-content:center;flex:none;width:34px;height:34px;padding:5px;border:1px solid transparent;border-radius:9px;background:transparent}
+.ext-toolbar-button:hover,.ext-toolbar-button.active{background:var(--line);border-color:var(--line)}
+.ext-toolbar-button img{width:20px;height:20px;object-fit:contain;border-radius:4px}
+.ext-toolbar-button .ext-fallback{font-size:18px;line-height:1}
+.ext-toolbar-button:focus-visible{outline:2px solid var(--accent);outline-offset:1px}
+.tile i img{width:26px;height:26px;margin:0;border-radius:6px;display:block}
+#rl.spin{animation:spin .6s}@keyframes spin{to{transform:rotate(360deg)}}
+.rec{background:#ff4d4d!important;color:#fff;animation:pulse 1s infinite}
+@keyframes pulse{50%{box-shadow:0 0 0 8px #ff4d4d00,0 0 0 0 #ff4d4d88}}
+#content{flex:1;position:relative}
+#views,#views webview{position:absolute;inset:0;width:100%;height:100%}
+#views webview{display:none;border:0}#views webview.on{display:flex;animation:fade .25s}
+@keyframes fade{from{opacity:0}}
+#start{position:absolute;inset:0;display:none;align-items:center;justify-content:center;flex-direction:column;overflow:hidden;z-index:2;background:var(--bg) url("assets/image-4928151514d8.png") center/cover no-repeat}
+#start.on{display:flex;animation:fade .35s}
+#bgm{position:absolute;inset:0;width:100%;height:100%;object-fit:cover;z-index:0;animation:fade 1s}
+#ov{position:absolute;inset:0;z-index:1;background:#000;opacity:.3;transition:opacity .3s}
+#sc{position:relative;z-index:3;text-align:center;width:min(640px,90%);animation:up .6s cubic-bezier(.2,.8,.2,1)}
+@keyframes up{from{opacity:0;transform:translateY(24px)}}
+#clock{font-size:72px;font-weight:200;color:#fff;text-shadow:0 2px 20px #0006}
+:root.light #clock{color:var(--fg)}#clock{margin-bottom:22px}
+#sf{display:flex;align-items:center;background:var(--bar);border:1px solid var(--line);border-radius:30px;padding:4px 6px 4px 20px;box-shadow:0 8px 30px #0005;transition:border-color .2s,box-shadow .2s}
+#sf:focus-within{border-color:var(--accent)!important;box-shadow:0 0 0 3px color-mix(in srgb,var(--accent) 35%,transparent),0 12px 40px #0005!important}
+#sq{flex:1;background:none;border:0;outline:0;color:var(--fg);font-size:16px;padding:10px 0}
+#go{background:var(--accent);color:#fff;border-radius:24px;padding:8px 20px}
+#tiles{display:flex;flex-wrap:wrap;gap:14px;justify-content:center;margin-top:30px}
+.tile{width:92px;padding:14px 6px;border-radius:14px;background:#0000004d;backdrop-filter:blur(8px);color:#fff;font-size:12px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;cursor:pointer;
+  transition:transform .2s,background .2s;animation:up .5s backwards}
+.tile:hover{transform:translateY(-6px) scale(1.06);background:#00000080}
+.tile i{display:flex;align-items:center;justify-content:center;width:40px;height:40px;margin:0 auto 8px;border-radius:12px;background:var(--accent);font-style:normal;font-size:18px}
+#cz{position:absolute;right:18px;bottom:18px;z-index:4;background:#0000008c;color:#fff;border-radius:24px;padding:10px 18px;backdrop-filter:blur(8px)}
+#cz:hover{background:var(--accent)}
+.pop,#panel{position:fixed;background:var(--bar);border:1px solid var(--line);z-index:9;transition:.25s;box-shadow:0 12px 40px #0006}
+.pop{top:84px;right:10px;width:320px;max-height:70vh;overflow:auto;border-radius:14px;padding:14px;opacity:0;transform:translateY(-10px) scale(.96);pointer-events:none}
+.pop.on{opacity:1;transform:none;pointer-events:auto}
+.pop h4{margin:0 0 10px}.item{display:flex;align-items:center;gap:8px;padding:8px;border-radius:8px;cursor:pointer;animation:up .25s backwards}
+.item:hover{background:var(--line)}.item span{flex:1;overflow:hidden;white-space:nowrap;text-overflow:ellipsis}.item small{color:var(--mut)}
+.bm-icon-wrap{position:relative;display:flex;align-items:center;justify-content:center;flex:none;width:25px;height:25px;border-radius:7px;background:var(--line);overflow:hidden}
+.bm-icon-wrap .bm-icon-fallback{display:flex;align-items:center;justify-content:center;flex:none;width:100%;height:100%;font-size:12px;font-weight:650;color:var(--fg)}
+.bm-icon-wrap .bm-favicon{position:absolute;inset:0;width:100%;height:100%;padding:3px;object-fit:contain;background:#fff;border-radius:7px}
+.item .bookmark-name{flex:1;min-width:0;overflow:hidden;white-space:nowrap;text-overflow:ellipsis}
+.empty{color:var(--mut);padding:8px}
+.ext-item{padding:9px;margin-top:8px;border:1px solid var(--line);border-radius:11px;background:color-mix(in srgb,var(--bg),transparent 35%)}
+.ext-head{display:flex;align-items:center;gap:8px;min-width:0}.ext-name{flex:1;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;font-weight:600}.ext-head small{color:var(--mut);font-size:11px}.ext-head button{padding:4px 7px;color:var(--mut)}.ext-actions{display:flex;flex-wrap:wrap;gap:5px;margin-top:8px}.ext-actions .btn{font-size:11px;padding:5px 8px;background:var(--line)}.ext-note{display:block;color:var(--mut);font-size:11px;line-height:1.4;margin-top:6px}
+#epanel{position:fixed;top:40px;right:-470px;width:min(420px,calc(100vw - 10px));height:calc(100% - 40px);z-index:14;display:flex;flex-direction:column;gap:10px;padding:12px;background:var(--bar);border-left:1px solid var(--line);box-shadow:0 12px 40px #0008;transition:right .25s;overflow:hidden}
+#epanel.on:not(.popup-mode){right:0}#epanel .ext-panel-head{display:flex;align-items:center;gap:7px;flex:none;min-width:0}#epanel h3{margin:0;flex:1;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;font-size:14px}#epanel .ep-action{padding:6px 8px;background:var(--line);font-size:12px;flex:none}#epbody{flex:1;min-height:0;overflow:hidden;border-radius:10px;background:var(--bg)}#epbody webview{display:flex;width:100%;height:100%;border:0}
+#epanel.popup-mode{top:82px;right:10px;width:min(380px,calc(100vw - 16px));height:min(520px,calc(100vh - 96px));border:1px solid var(--line);border-radius:14px;padding:8px;opacity:0;transform:translateY(-8px) scale(.97);pointer-events:none;transition:opacity .16s,transform .16s;box-shadow:0 14px 44px #0009}
+#epanel.popup-mode.on{opacity:1;transform:none;pointer-events:auto}
+#epanel.popup-mode.toolbar-popup .ext-panel-head{display:none}
+#epanel.popup-mode.toolbar-popup #epbody{border-radius:8px}
+#epanel.popup-mode #epbody{min-height:0}
+#panel{top:0;right:-430px;width:340px;height:100%;border-width:0 0 0 1px;padding:18px;overflow:auto}
+#panel.on{right:0}#panel h3{margin:0}#panel label{display:block;margin:14px 0 4px;color:var(--mut);font-size:12px;text-transform:uppercase;letter-spacing:.5px}
+#panel input[type=range]{width:100%}#panel select,#panel textarea{width:100%;background:var(--bg);color:var(--fg);border:1px solid var(--line);border-radius:8px;padding:8px;font:inherit}
+.row{display:flex;gap:8px;align-items:center}.btn{background:var(--line)}.warn{color:#ff6b6b}
+#sug{position:fixed;z-index:12;background:var(--bar);border:1px solid var(--line);border-radius:16px;padding:6px;box-shadow:0 14px 40px #0007;opacity:0;transform:translateY(-6px);pointer-events:none;transition:.15s;overflow:hidden}
+#sug.on{opacity:1;transform:none;pointer-events:auto}
+.sg{padding:9px 12px;border-radius:10px;cursor:pointer;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;color:var(--fg)}
+.sg.on,.sg:hover{background:var(--line)}.sg b{font-weight:700}.sg i{font-style:normal;margin-right:8px;opacity:.6}
+#urlwrap.drag{border-color:var(--accent);box-shadow:0 0 0 4px color-mix(in srgb,var(--accent) 40%,transparent);animation:pulse2 .8s infinite}
+@keyframes pulse2{50%{transform:scale(1.015)}}
+#iv{position:fixed;inset:0;z-index:30;background:#000d;backdrop-filter:blur(10px);display:flex;align-items:center;justify-content:center;opacity:0;pointer-events:none;transition:opacity .25s}
+#iv.on{opacity:1;pointer-events:auto}
+#ivimg{max-width:92vw;max-height:88vh;border-radius:10px;box-shadow:0 20px 80px #000;transform:scale(.92);transition:transform .3s cubic-bezier(.2,.9,.3,1.2);cursor:zoom-in;background:#222}
+#iv.on #ivimg{transform:scale(1)}
+#ivbar{position:absolute;top:14px;right:16px;display:flex;gap:8px}#ivbar button{background:#ffffff22;color:#fff;border-radius:20px;padding:8px 16px}#ivbar button:hover{background:var(--accent)}
+#toast{position:fixed;left:50%;bottom:30px;transform:translate(-50%,40px);background:#000c;color:#fff;padding:10px 18px;border-radius:20px;opacity:0;transition:.3s;z-index:20;pointer-events:none}
+#toast.on{opacity:1;transform:translate(-50%,0)}
+
+#sf{background:#0000004d;border-color:#ffffff33;backdrop-filter:blur(8px);box-shadow:0 8px 30px #0003}
+#sq{color:#fff;-webkit-font-smoothing:antialiased;text-rendering:optimizeLegibility}#sq::placeholder{color:#ffffffb3}#smic{color:#fff}
+#lk,#wr{position:fixed;inset:0;z-index:50;background:#000c;backdrop-filter:blur(14px);display:none;align-items:center;justify-content:center}
+#lk{background:var(--bg);z-index:60}#lk.on,#wr.on{display:flex;animation:fade .25s}
+#lkbox,#wrbox{background:var(--bar);border:1px solid var(--line);border-radius:18px;padding:28px 32px;text-align:center;width:min(420px,92vw);box-shadow:0 20px 70px #0008}
+#lkbox h3,#wrbox h3{margin:6px 0 16px}#lkbox input{width:100%;padding:11px 14px;border-radius:12px;border:1px solid var(--line);background:var(--bg);color:var(--fg);font-size:15px;margin-bottom:10px}
+#lkgo,#wrgo{background:var(--accent);color:#fff;padding:10px 22px;border-radius:12px}#wrback{background:#2e9e55;color:#fff;padding:10px 22px;border-radius:12px}
+#lkmsg{color:#ff6b6b;min-height:20px;margin-top:8px}#lk.shake #lkbox{animation:shake .35s}
+@keyframes shake{25%{transform:translateX(-10px)}75%{transform:translateX(10px)}}
+#wrhost{color:var(--mut);margin-bottom:8px;word-break:break-all}#wrl{text-align:left;color:var(--fg);line-height:1.5;margin:10px 0 18px}
+
+/* simple tabs */
+#tabs{background:var(--bg);padding:6px 8px 2px;align-items:center}
+#tablist{gap:2px}
+.tab{flex:0 1 200px;max-width:200px;min-width:40px;padding:7px 10px;border-radius:8px;font-size:13px;color:var(--mut);box-shadow:none;transition:background .15s,color .15s;animation:tin .18s ease}
+.tab:hover{background:var(--line);transform:none}
+.tab.on{background:var(--bar);color:var(--fg)}
+.tab::after{display:none}
+.tab b{opacity:0;width:18px;height:18px;line-height:18px;font-size:11px;border-radius:5px;transition:opacity .15s,background .15s}
+.tab:hover b,.tab.on b{opacity:.55}
+.tab b:hover{opacity:1;background:var(--line);transform:none}
+.tab.on b:hover{background:var(--bg)}
+#nt{width:28px;height:28px;padding:0;font-size:17px;border-radius:8px;flex:none}
+#nt:hover{transform:none}
+@keyframes tin{from{opacity:0}}
+@keyframes tout{to{opacity:0;flex-basis:0;min-width:0;max-width:0;padding:0}}
+
+/* tab bar animations */
+#tabs{animation:tabsin .45s cubic-bezier(.2,.9,.3,1)}
+@keyframes tabsin{from{opacity:0;transform:translateY(-14px)}}
+#tablist{position:relative}
+#tabind{position:absolute;left:0;top:0;width:0;height:0;border-radius:8px;background:var(--bar);box-shadow:0 1px 4px #0003;opacity:0;pointer-events:none}
+.tab{position:relative;z-index:1;transform-origin:bottom center;animation:tin .34s cubic-bezier(.2,.9,.3,1.15)}
+.tab.on{background:transparent}
+.tab:hover:not(.on){background:var(--line)}
+.tab span{transition:color .2s}
+.tab b:hover{transform:rotate(90deg)}
+.tab img{animation:ipop .4s cubic-bezier(.3,1.7,.5,1)}
+.tab u{display:none;width:13px;height:13px;border:2px solid var(--line);border-top-color:var(--accent);border-radius:50%;flex:none;animation:spin .7s linear infinite}
+.tab.loading u{display:block}.tab.loading img{display:none}
+#nt{position:relative;z-index:1;transition:background .15s,transform .25s cubic-bezier(.3,1.5,.5,1)}
+#nt:hover{transform:rotate(90deg)}#nt:active{transform:rotate(90deg) scale(.85)}
+@keyframes tin{from{opacity:0;transform:translateY(8px) scale(.82);max-width:0;padding-left:0;padding-right:0}}
+@keyframes tout{to{opacity:0;transform:scale(.8);flex-basis:0;min-width:0;max-width:0;padding-left:0;padding-right:0}}
+@keyframes ipop{from{transform:scale(0) rotate(-40deg)}}
+
+/* icon buttons + downloads */
+.ico{width:18px;height:18px;display:block;object-fit:contain}
+:root.light .ico{filter:invert(1)}
+button.tool{padding:5px 8px;display:flex;align-items:center;justify-content:center}
+#dlb.dlactive .ico{animation:bob .9s ease-in-out infinite}
+@keyframes bob{50%{transform:translateY(3px)}}
+.item.dl{align-items:flex-start;cursor:default}.dlm{flex:1;min-width:0}.dlm span{display:block;overflow:hidden;white-space:nowrap;text-overflow:ellipsis}
+.dlm small{display:block;margin-top:2px}.bar{height:4px;background:var(--line);border-radius:3px;margin-top:6px;overflow:hidden}
+.bar i{display:block;height:100%;background:var(--accent);transition:width .3s}
+.dlbtn{display:flex;gap:4px;flex-wrap:wrap;justify-content:flex-end}.dlbtn button{font-size:12px;padding:3px 8px;background:var(--line)}
+
+/* Edge-style blended title bar + smaller icons */
+#tabs{height:40px;padding:0 142px 0 8px;align-items:center;-webkit-app-region:drag;animation:none}
+#tabs button,.tab{-webkit-app-region:no-drag}
+#tablist{height:100%;align-items:center}
+#lk{-webkit-app-region:drag}#lkbox{-webkit-app-region:no-drag}
+.ico{width:14px;height:14px}
+button.tool{padding:4px 6px;border-radius:8px;margin-left:0}
+#bar{gap:3px}
+
+/* suspicious-site warning bar (page still loads) */
+#warnbar{display:none;position:absolute;left:0;right:0;top:0;height:44px;z-index:5;align-items:center;gap:10px;padding:0 14px;background:#ffcc33;color:#3a2a00;font-size:13px;box-shadow:0 2px 10px #0004}
+#warnbar #wrtxt{flex:1;overflow:hidden;white-space:nowrap;text-overflow:ellipsis;font-weight:600}
+#warnbar button{background:#3a2a0022;color:#3a2a00;padding:5px 12px}#warnbar button:hover{background:#3a2a0044}
+#content.warned #warnbar{display:flex;animation:wdown .25s ease}
+#content.warned #views{top:44px;height:calc(100% - 44px)}
+@keyframes wdown{from{transform:translateY(-100%)}}
+
+/* hard-blocked site page */
+#blockpage{display:none;position:absolute;inset:0;z-index:6;background:#2b0d0d;color:#fff;flex-direction:column;align-items:center;justify-content:center;text-align:center;padding:30px}
+#content.isblocked #blockpage{display:flex;animation:fade .25s}
+#blockpage h1{margin:8px 0;font-size:34px}#bphost{font-size:18px;opacity:.9;word-break:break-all}#bprs{max-width:560px;line-height:1.5;color:#ffd0d0}
+#blockpage .bpn{opacity:.7;font-size:13px}#bpleave{background:#fff;color:#2b0d0d;font-weight:600;padding:11px 26px;border-radius:12px;margin-top:10px}
+
+/* square toolbar buttons matching the address bar height; panel clear of window controls */
+#urlwrap{height:38px}#url{padding:0;height:100%}
+button.tool{width:38px;height:38px;padding:0;flex:none;border-radius:10px;margin:0}
+.ico{width:14px;height:14px}
+#panel{top:40px;height:calc(100% - 40px)}
+#ivbar{top:50px}
+
+/* slightly smaller toolbar buttons, no white ring */
+button.tool{width:32px;height:32px;border-radius:9px}
+:root:not(.light) button.tool{box-shadow:none}
+.ico{width:13px;height:13px}
+
+/* blended form controls (both side panels) */
+#secpanel{position:fixed;top:40px;right:-430px;width:340px;height:calc(100% - 40px);background:var(--bar);border-left:1px solid var(--line);z-index:9;padding:18px;overflow:auto;transition:right .25s;box-shadow:0 12px 40px #0006}
+#secpanel.on{right:0}#secpanel h3{margin:0}
+#secpanel label{display:block;margin:14px 0 4px;color:var(--mut);font-size:12px;text-transform:uppercase;letter-spacing:.5px}
+.side{scrollbar-width:thin;scrollbar-color:var(--line) transparent}
+.side select,.side textarea,.side input[type=password],.side input[type=text]{background:var(--bg);color:var(--fg);border:1px solid var(--line);border-radius:10px;padding:8px 10px;font:inherit;outline:none;transition:border-color .15s;width:100%}
+.side select:focus,.side textarea:focus,.side input:focus{border-color:var(--accent)}
+.side input[type=range]{accent-color:var(--accent);height:4px;cursor:pointer}
+.side input[type=checkbox]{accent-color:var(--accent);width:15px;height:15px;vertical-align:middle;margin-right:6px}
+.side input[type=color]{-webkit-appearance:none;appearance:none;width:34px;height:34px;padding:0;border:2px solid var(--line);border-radius:50%;background:none;cursor:pointer;overflow:hidden;flex:none;transition:transform .15s,border-color .15s}
+.side input[type=color]:hover{transform:scale(1.08);border-color:var(--accent)}
+.side input[type=color]::-webkit-color-swatch-wrapper{padding:0}.side input[type=color]::-webkit-color-swatch{border:none;border-radius:50%}
+.side .btn{background:var(--bg);border:1px solid var(--line);border-radius:10px;padding:8px 12px;color:var(--fg);transition:background .15s,border-color .15s}
+.side .btn:hover{background:var(--line);border-color:var(--accent)}
+.side #panel label.fbtn,.side label.fbtn,#panel label.fbtn,#secpanel label.fbtn{display:inline-block;margin:0;cursor:pointer;text-transform:none;font-size:13px;letter-spacing:0;color:var(--fg)}
+#panel label.chk{text-transform:none;font-size:13px;letter-spacing:0;line-height:1.4;margin-top:10px}
+.side .warn{color:#ff6b6b}
+/* start page items */
+#layer{position:absolute;inset:0;z-index:2;pointer-events:none}
+#layer.edit{z-index:5}
+.si{position:absolute;pointer-events:none;user-select:none;-webkit-user-drag:none}
+.si img,.si video{display:block;width:100%;height:auto;pointer-events:none;-webkit-user-drag:none}
+.si>div{pointer-events:none}
+#layer.edit .si{pointer-events:auto;cursor:move;outline:2px dashed color-mix(in srgb,var(--accent) 70%,transparent);outline-offset:3px}
+#layer.edit .si.sel{outline:2px solid var(--accent)}
+.it{display:flex;align-items:center;gap:6px;padding:6px 8px;border-radius:8px;cursor:pointer;margin-top:4px;border:1px solid transparent}
+.it span{flex:1;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;font-size:13px}.it:hover{background:var(--line)}.it.on{border-color:var(--accent);background:var(--line)}
+.it button{padding:2px 7px;font-size:12px}
+#ited{margin-top:8px;padding-top:4px;border-top:1px solid var(--line)}#ited:empty{display:none}
+.ed{display:flex;align-items:center;gap:8px;margin:8px 0}.ed>span{width:74px;flex:none;color:var(--mut);font-size:12px}
+.ed input[type=range],.ed select,.ed textarea{flex:1;min-width:0}.ed textarea{resize:vertical}
+
+/* tab tools */
+.tab em{display:none;font-style:normal;font-size:12px;cursor:pointer;flex:none}.tab.aud em{display:block}
+.tab.pinned{flex:0 0 38px;min-width:38px;max-width:38px;padding:7px 11px;gap:0}
+.tab.pinned b,.tab.pinned em{display:none}
+.tab.pinned span{display:block;flex:none;width:14px;overflow:hidden;text-align:center}
+.tab.pinned img:not([hidden])+span{display:none}
+.tab.sleep{opacity:.5}.tab.sleep:hover{opacity:.85}
+.tab.dragging{opacity:.35}
+.tab[data-g]:not([data-g=""])::before{content:"";position:absolute;left:8px;right:8px;bottom:1px;height:3px;border-radius:3px;background:var(--g)}
+#tmenu{display:none;position:fixed;z-index:80;min-width:220px;background:var(--bar);border:1px solid var(--line);border-radius:12px;padding:6px;box-shadow:0 14px 40px #0008;-webkit-app-region:no-drag}
+#tmenu.on{display:block;animation:fade .12s}
+.mi{padding:7px 12px;border-radius:8px;cursor:pointer;font-size:13px}.mi:hover{background:var(--line)}.mi.dis{opacity:.4;pointer-events:none}
+.msep{height:1px;background:var(--line);margin:5px 4px}
+.mdots{display:flex;gap:9px;padding:7px 12px;align-items:center}.mdots i{width:16px;height:16px;border-radius:50%;cursor:pointer;border:2px solid transparent;transition:transform .12s}
+.mdots i:hover{transform:scale(1.25)}.mdots i.on{border-color:var(--fg)}.mdots i.none{background:var(--line)!important;position:relative}
+
+/* dynamic theme tint + hide-UI mode */
+#tabs,#bar{background:color-mix(in srgb,var(--bg),var(--tint,transparent) var(--tintp,0%));transition:background .4s}
+body.zen #tabs,body.zen #bar,body.zen #cz,body.zen .pop,body.zen .side,body.zen #epanel,body.zen #tmenu,body.zen #sug{display:none!important}
+#zenbtn{display:none;position:fixed;top:10px;left:10px;z-index:70;width:34px;height:34px;padding:0;border-radius:50%;background:#000a;color:#fff;font-size:15px;opacity:.3;transition:opacity .2s,transform .15s;-webkit-app-region:no-drag}
+body.zen #zenbtn{display:block;animation:fade .3s}#zenbtn:hover{opacity:1;transform:scale(1.1)}
+
+
+/* 1.8.13 — remove closed slide-out panels entirely from rendering and hit-testing.
+   This prevents any black edge/strip from remaining over the Customize control. */
+#panel:not(.on), #secpanel:not(.on), #epanel:not(.on) {
+  display: none !important;
+}
+
+/* 1.8.3 — consistent, understated controls */
+button {
+  border: 1px solid transparent;
+  border-radius: 7px;
+  box-shadow: none;
+  transition: background-color .14s ease, border-color .14s ease, color .14s ease, opacity .14s ease;
+}
+button:hover {
+  background: color-mix(in srgb, var(--line) 72%, transparent);
+  border-color: var(--line);
+}
+button:active { transform: none !important; box-shadow: inset 0 1px 2px #0002; }
+button:focus-visible { outline: 2px solid color-mix(in srgb, var(--accent) 70%, transparent); outline-offset: 1px; }
+button.tool {
+  background: var(--bar); border: 1px solid var(--line); border-radius: 8px;
+  box-shadow: none !important;
+}
+button.tool:hover, .ext-toolbar-button:hover, .ext-toolbar-button.active {
+  background: var(--line); border-color: var(--line);
+}
+.ext-toolbar-button { border-radius: 7px; transition: background-color .14s ease, border-color .14s ease; }
+.btn, .ep-action, .ext-actions .btn, .side .btn {
+  color: var(--fg); background: var(--bar); border: 1px solid var(--line);
+  border-radius: 7px; box-shadow: none; font-weight: 500;
+}
+.btn:hover, .ep-action:hover, .ext-actions .btn:hover, .side .btn:hover {
+  background: var(--line); border-color: var(--line);
+}
+.side .btn:hover { border-color: var(--line); }
+.ext-actions .btn { padding: 6px 9px; font-size: 11px; }
+#go, #lkgo, #wrgo, #wrback {
+  color: var(--fg); background: var(--line); border: 1px solid var(--line);
+  border-radius: 8px; box-shadow: none; font-weight: 500;
+}
+#go:hover, #lkgo:hover, #wrgo:hover, #wrback:hover { background: color-mix(in srgb, var(--line) 70%, var(--bar)); border-color: var(--mut); }
+#cz {
+  background: color-mix(in srgb, var(--bar) 92%, transparent); color: var(--fg);
+  border: 1px solid var(--line); border-radius: 8px; padding: 8px 12px;
+  box-shadow: 0 4px 18px #0002; backdrop-filter: blur(8px);
+}
+#cz:hover { background: var(--line); }
+#ivbar button { background: var(--bar); color: var(--fg); border: 1px solid var(--line); border-radius: 8px; padding: 7px 11px; }
+#ivbar button:hover { background: var(--line); }
+#warnbar button { border-radius: 6px; }
+#bpleave { background: var(--bar); color: #fff; border: 1px solid #ffffff3d; border-radius: 8px; }
+#bpleave:hover { background: #ffffff20; }
+.pop { border-radius: 10px; }
+.ext-item { border-radius: 8px; }
+#epanel.popup-mode {
+  border-radius: 10px; border-color: var(--line); padding: 6px;
+  box-shadow: 0 10px 28px #0005; background: var(--bar);
+}
+#epanel.popup-mode #epbody { border-radius: 6px; background: var(--bg); }
+#epanel .ep-action { padding: 5px 8px; }
+
+
+/* 1.8.3 popup dismissal + oval start-page search */
+#epanel:not(.on) {
+  visibility: hidden !important;
+  pointer-events: none !important;
+}
+#epanel.on { visibility: visible; }
+#sf { border-radius: 999px !important; }
+#sf #go { border-radius: 999px !important; }
+
+
+/* Extension manager: compact popup; the library itself opens as a normal tab. */
+.pop.ext-manager-pop{top:76px;right:10px;width:min(390px,calc(100vw - 20px));max-height:calc(100vh - 94px);padding:0;overflow:auto;border-radius:13px;background:var(--bar);border-color:var(--line);box-shadow:0 18px 48px #0007}
+.ext-manager-head{display:flex;align-items:center;gap:10px;padding:13px 14px 11px;border-bottom:1px solid var(--line)}
+.ext-manager-icon{width:34px;height:34px;display:grid;place-items:center;flex:none;border-radius:9px;background:color-mix(in srgb,var(--accent) 15%,var(--bg));font-size:19px}
+.ext-manager-title{min-width:0;flex:1;display:flex;flex-direction:column;gap:3px}.ext-manager-title strong{font-size:14px;font-weight:650}.ext-manager-title span{font-size:11px;color:var(--mut)}
+.ext-close{width:28px;height:28px;padding:0;border-radius:7px;color:var(--mut);border:1px solid transparent}.ext-close:hover{background:var(--line);color:var(--fg);border-color:var(--line)}
+.ext-manager-actions{display:flex;gap:7px;padding:10px 12px;border-bottom:1px solid var(--line)}
+.ext-manager-actions .btn,.ext-unpacked{font-size:11px;padding:7px 9px;border:1px solid var(--line);border-radius:8px;background:var(--bg);white-space:nowrap}
+.ext-manager-actions .ext-browse-btn{flex:1;text-align:center;background:color-mix(in srgb,var(--accent) 13%,var(--bar));border-color:color-mix(in srgb,var(--accent) 25%,var(--line))}
+.ext-manager-actions .ext-upload{background:var(--accent);color:#fff;border-color:transparent}
+#exl{display:flex;flex-direction:column;gap:8px;padding:10px 12px}
+.ext-item{padding:9px 10px;margin:0;background:color-mix(in srgb,var(--bg) 30%,var(--bar));border:1px solid var(--line);border-radius:10px;min-width:0}
+.ext-head{gap:8px}.ext-head>img{width:28px!important;height:28px!important;background:var(--bg);padding:3px;border-radius:7px}.ext-name{font-size:12px;min-width:0}.ext-head small{font-size:10px;padding:2px 5px;background:var(--bg);border:1px solid var(--line);border-radius:5px}.ext-head>button:last-child{width:24px;height:24px;padding:3px;border:1px solid var(--line);border-radius:6px}
+.ext-actions{gap:5px;margin-top:7px}.ext-actions .btn{font-size:10px;padding:5px 7px;border-radius:7px;background:var(--line);border:1px solid transparent}.ext-actions .btn:hover{border-color:color-mix(in srgb,var(--accent) 40%,var(--line))}.ext-note{line-height:1.4}.ext-store-empty{padding:20px 12px;text-align:center;color:var(--mut);font-size:12px;line-height:1.45}
+.ext-manager-foot{display:flex;align-items:center;justify-content:space-between;gap:8px;padding:10px 12px;margin:0;border-top:1px solid var(--line);font-size:10px;line-height:1.4;color:var(--mut)}.ext-manager-foot span{min-width:0;flex:1}.ext-unpacked{color:var(--mut);padding:5px 7px;font-size:10px}
+#extension-store-page{display:none;position:absolute;inset:0;z-index:7;overflow:auto;flex-direction:column;gap:0;padding:clamp(18px,3vw,34px) clamp(16px,4vw,48px) 26px;background:var(--bg);color:var(--fg)}
+#extension-store-page.on{display:flex;animation:fade .18s ease-out}
+.store-page-top{display:flex;align-items:center;justify-content:space-between;gap:16px;padding-bottom:22px;border-bottom:1px solid var(--line)}
+.store-page-brand{display:flex;align-items:center;gap:14px;min-width:0}.store-page-icon{width:52px;height:52px;display:grid;place-items:center;flex:none;border:1px solid var(--line);border-radius:14px;background:var(--bar);font-size:26px}.store-page-eyebrow{color:var(--accent);font-size:9px;font-weight:750;letter-spacing:1.4px;margin-bottom:4px}.store-page-brand h1{font-size:25px;line-height:1.15;letter-spacing:-.4px;margin:0 0 5px}.store-page-brand p{color:var(--mut);font-size:12px;margin:0}.store-page-top>.btn{border:1px solid var(--line);background:var(--bar);padding:8px 12px;white-space:nowrap}
+.store-page-tools{display:flex;align-items:end;justify-content:space-between;gap:20px;padding:23px 0 18px}.store-page-copy h2{font-size:17px;margin:0 0 5px;font-weight:650}.store-page-copy p{font-size:12px;color:var(--mut);margin:0;line-height:1.5}.ext-search-wrap{display:flex;align-items:center;gap:8px;width:min(300px,45%);background:var(--bar);border:1px solid var(--line);border-radius:10px;padding:0 11px;flex:none}.ext-search-wrap:focus-within{border-color:var(--accent);box-shadow:0 0 0 2px color-mix(in srgb,var(--accent) 18%,transparent)}.ext-search-wrap span{font-size:22px;color:var(--mut);line-height:1}.ext-search-wrap input{width:100%;min-width:0;background:transparent;border:0;outline:0;color:var(--fg);font:inherit;font-size:12px;padding:11px 0}
+.ext-store-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(220px,1fr));gap:14px;align-items:stretch}.ext-library-card{display:flex;flex-direction:column;min-width:0;overflow:hidden;border:1px solid var(--line);border-radius:12px;background:var(--bar);transition:border-color .15s,transform .15s,box-shadow .15s}.ext-library-card:hover{border-color:color-mix(in srgb,var(--accent) 45%,var(--line));transform:translateY(-2px);box-shadow:0 8px 22px #0002}.ext-library-thumb{width:100%;height:125px;display:block;object-fit:cover;background:var(--bg);border-bottom:1px solid var(--line)}.ext-library-body{display:flex;flex-direction:column;gap:8px;padding:12px;flex:1}.ext-library-meta{display:flex;align-items:center;justify-content:space-between;gap:7px;color:var(--mut);font-size:10px}.ext-library-category{color:var(--accent);font-weight:650;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}.ext-library-version{border:1px solid var(--line);background:var(--bg);padding:3px 6px;border-radius:6px;white-space:nowrap}.ext-library-title{font-size:14px;font-weight:650;line-height:1.35;margin:0;min-height:36px}.ext-library-desc{font-size:12px;line-height:1.5;color:var(--mut);margin:0;min-height:52px}.ext-library-access{font-size:10px;line-height:1.45;color:var(--mut);padding-top:8px;margin-top:auto;border-top:1px solid var(--line)}.ext-library-actions{display:flex;gap:8px;margin-top:3px}.ext-library-install{flex:1;border:1px solid transparent;border-radius:8px;padding:8px 10px;background:var(--accent);color:white;font-size:12px;font-weight:650}.ext-library-install:hover:not(:disabled){filter:brightness(1.08)}.ext-library-install:disabled{background:var(--line);color:var(--mut);cursor:default;opacity:.9}.ext-library-details{font-size:11px;color:var(--mut);padding:8px 10px;border:1px solid var(--line);border-radius:8px;background:transparent}.ext-store-disclaimer{color:var(--mut);font-size:11px;line-height:1.5;margin:18px 0 0;padding-top:13px;border-top:1px solid var(--line)}
+@media(max-width:650px){.pop.ext-manager-pop{right:6px;width:calc(100vw - 12px)}.store-page-top{align-items:flex-start}.store-page-brand h1{font-size:21px}.store-page-tools{align-items:stretch;flex-direction:column;gap:13px}.ext-search-wrap{width:100%}.ext-store-grid{grid-template-columns:repeat(auto-fill,minmax(165px,1fr));gap:9px}.ext-library-thumb{height:100px}.ext-library-desc{min-height:0}.store-page-icon{width:43px;height:43px;font-size:22px}}
+
+
+/* Settings panel polish: readable labels, steady spacing, and consistent sizing. */
+#panel,#secpanel{width:min(390px,calc(100vw - 12px));padding:18px 20px;background:var(--bar);border-color:var(--line)}
+#panel label,#secpanel label{display:block;text-transform:none;letter-spacing:0;color:var(--mut);font-size:12px;font-weight:550;line-height:1.4;margin:15px 0 6px}
+#panel label.chk,#panel label:has(input[type="checkbox"]),#secpanel label:has(input[type="checkbox"]){display:flex;align-items:flex-start;gap:7px;color:var(--fg);font-size:12px;font-weight:450;text-transform:none;letter-spacing:0;line-height:1.45;margin:10px 0}
+#panel label:has(input[type="checkbox"]) input,#secpanel label:has(input[type="checkbox"]) input{flex:none;margin:2px 0 0;}
+#panel select,#secpanel select,#panel input[type="password"],#secpanel input[type="password"],#panel input[type="text"],#secpanel input[type="text"]{min-height:35px}
+#panel .row,#secpanel .row{flex-wrap:wrap}
+#panel .row .btn,#secpanel .row .btn{max-width:100%;}
+
+
+/* 1.8.14 — Developer Options and Script Log */
+#devpanel,#scriptlogpanel{position:fixed;top:40px;right:-430px;width:min(390px,calc(100vw - 12px));height:calc(100% - 40px);background:var(--bar);border-left:1px solid var(--line);z-index:16;padding:18px 20px;overflow:auto;transition:right .22s;box-shadow:0 12px 40px #0006}
+#devpanel.on,#scriptlogpanel.on{right:0}
+#devpanel h3,#scriptlogpanel h3{margin:0;font-size:15px}
+#devpanel label.chk{display:flex;align-items:flex-start;gap:7px;color:var(--fg);font-size:12px;line-height:1.45;margin:13px 0 4px;text-transform:none;letter-spacing:0}
+#devpanel label.chk input{flex:none;margin:2px 0 0}
+.dev-help{margin:0 0 8px 22px;color:var(--mut);font-size:11px;line-height:1.45}
+.scriptlog-controls{gap:6px;margin-bottom:10px}
+.scriptlog-controls select{flex:1;min-width:0;background:var(--bg);color:var(--fg);border:1px solid var(--line);border-radius:7px;padding:7px;font:inherit;font-size:11px}
+.scriptlog-controls .btn{padding:7px 8px;font-size:11px;white-space:nowrap}
+#scriptloglist{display:flex;flex-direction:column;gap:7px;min-height:80px}
+.scriptlog-row{border:1px solid var(--line);border-left:3px solid var(--mut);border-radius:7px;background:var(--bg);padding:8px 9px;min-width:0}
+.scriptlog-row.error{border-left-color:#ef5350}.scriptlog-row.warning{border-left-color:#e4aa3a}.scriptlog-row.info{border-left-color:#6297e8}
+.scriptlog-meta{display:flex;align-items:center;gap:6px;justify-content:space-between;margin-bottom:5px;color:var(--mut);font-size:10px}
+.scriptlog-level{text-transform:uppercase;font-weight:750;letter-spacing:.45px}.scriptlog-row.error .scriptlog-level{color:#ff7777}.scriptlog-row.warning .scriptlog-level{color:#edbd5c}.scriptlog-row.info .scriptlog-level{color:#81b3ff}
+.scriptlog-source{overflow:hidden;text-overflow:ellipsis;white-space:nowrap;max-width:55%}
+.scriptlog-message{font-size:11px;line-height:1.45;white-space:pre-wrap;overflow-wrap:anywhere;color:var(--fg);user-select:text}
+.scriptlog-empty{padding:18px 8px;text-align:center;color:var(--mut);font-size:12px;line-height:1.5}
+#panel:not(.on),#secpanel:not(.on),#devpanel:not(.on),#scriptlogpanel:not(.on),#epanel:not(.on){display:none!important}
+body.zen #devpanel,body.zen #scriptlogpanel{display:none!important}
+
+
+/* Netlify / Apple web adaptation: retains the source app's design. */
+html,body { height:100%; height:100dvh; overscroll-behavior:none; -webkit-text-size-adjust:100%; }
+body{padding-top:env(safe-area-inset-top);padding-bottom:env(safe-area-inset-bottom)}
+#tabs{padding:0 8px;height:40px;flex:none;min-height:40px;-webkit-app-region:unset}
+#tablist{overflow-x:auto;overflow-y:hidden;min-width:0;scrollbar-width:none;-webkit-overflow-scrolling:touch}
+#tablist::-webkit-scrollbar{display:none}
+.tab{flex:0 0 min(190px,35vw);touch-action:pan-x}
+#nt{position:sticky;right:0;background:var(--bg);box-shadow:-7px 0 8px var(--bg)}
+#bar{min-height:51px;flex:none;padding:6px max(8px,env(safe-area-inset-right)) 6px max(8px,env(safe-area-inset-left))}
+#urlwrap{min-width:0}
+#url{min-width:0;font-size:14px}
+#views{position:absolute;inset:0}
+#views iframe{position:absolute;inset:0;width:100%;height:100%;border:0;background:#fff;display:none}
+#views iframe.on{display:block}
+#framehelp{display:none;position:absolute;z-index:4;right:10px;bottom:max(10px,env(safe-area-inset-bottom));font-size:11px;border:1px solid var(--line);border-radius:9px;padding:4px 8px;background:var(--bar);color:var(--mut);box-shadow:0 2px 14px #0003}
+#framehelp.on{display:flex;align-items:center;gap:5px}
+#frameopen{color:var(--fg);font-size:11px;padding:4px 7px;background:var(--line)}
+#compat.on{background:color-mix(in srgb,var(--accent) 26%,var(--bar));border-color:var(--accent)}
+#compat-note{font-size:12px;line-height:1.5;color:var(--mut);margin:10px 0 4px;padding:9px 11px;border:1px solid var(--line);border-radius:8px}
+#panel{top:env(safe-area-inset-top);height:calc(100dvh - env(safe-area-inset-top) - env(safe-area-inset-bottom));right:0;max-width:100vw;overscroll-behavior:contain}
+#panel:not(.on){display:none!important}
+#panel.on{display:block}
+#start{background-position:center}
+#start.on{display:flex}
+#clock{font-size:clamp(42px,8vw,72px)}
+#sc{width:min(640px,94%);max-height:calc(100% - 90px);overflow-y:auto;scrollbar-width:none}
+#sc::-webkit-scrollbar{display:none}
+#tiles{gap:10px}
+#cz{bottom:max(18px,env(safe-area-inset-bottom))}
+.pop{max-width:calc(100vw - 16px)}
+#tmenu{max-height:85dvh;overflow-y:auto}
+#toast{bottom:max(26px,env(safe-area-inset-bottom))}
+#layer.edit .si{touch-action:none}
+button{touch-action:manipulation}
+#sf{max-width:100%}
+#go{white-space:nowrap}
+@media(max-width:640px){
+ #tabs{height:39px;min-height:39px}
+ .tab{flex-basis:135px;font-size:12px;padding:7px 8px}
+ .tab b{opacity:.7}
+ #bar{gap:2px}
+ #bar>button{padding:5px 5px;font-size:18px;min-width:28px}
+ #bar>button.tool{width:30px;height:32px}
+ #urlwrap{padding-left:8px;gap:4px;height:36px}
+ #lock{font-size:12px}
+ #url{font-size:13px}
+ #umic{padding:4px 3px}
+ #star{padding:4px 5px}
+ #panel{width:min(360px,100vw);padding:16px}
+ #tiles{margin-top:22px;gap:8px}
+ .tile{width:76px;padding:9px 4px;font-size:11px}
+ .tile i{width:36px;height:36px}
+ #clock{margin-bottom:17px}
+ #sc{margin-top:-10vh}
+ #cz{font-size:12px}
+ #framehelp{font-size:10px;right:6px;bottom:6px}
+}
+@media(max-width:390px){
+ #bar>button.tool{width:27px}
+ #umic{display:none}
+ #star{padding:2px 3px}
+ #urlwrap{gap:2px}
+ #url{font-size:12px}
+ #go{padding:8px 11px}
+}
+@media (prefers-reduced-motion:reduce){*{animation-duration:.001ms!important;transition-duration:.001ms!important}}
+#start{background-image:none!important;isolation:isolate}
+#start::before{content:"";position:absolute;inset:-28px;z-index:0;background:var(--start-bg,url("assets/image-4928151514d8.png")) center/cover no-repeat;filter:blur(var(--bg-blur,0px));pointer-events:none}
+#bgm{z-index:0}
+#ov{z-index:1}
+
+/* Secure Search patch — tabs stay fully visible while scrolling. */
+#tabs{height:46px;min-height:46px;padding:4px 8px;display:flex;align-items:center;gap:7px;overflow:visible}
+#tablist{display:flex;gap:5px;flex:1 1 auto;min-width:0;height:38px;overflow-x:auto;overflow-y:hidden;align-items:center;scrollbar-width:none;scroll-padding-inline:5px}
+#tablist::-webkit-scrollbar{display:none}
+#tabind{display:none!important}
+#tablist .tab{animation:none!important;transform:none!important;transition:background .15s,color .15s;flex:0 0 178px;min-width:110px;max-width:178px;height:34px;margin:0;padding:7px 9px;border-radius:10px;align-items:center;overflow:visible}
+#tablist .tab.on{box-shadow:inset 0 0 0 1px color-mix(in srgb,var(--accent) 30%,transparent)}
+#tablist .tab span{min-width:0}
+#tablist .tab b{flex:none}
+#tablist .tab.pinned{flex-basis:37px;min-width:37px;max-width:37px}
+#nt{position:static!important;z-index:2;display:grid;place-items:center;flex:0 0 32px;width:32px;height:32px;margin:0;padding:0;border-radius:10px;background:var(--bar);box-shadow:none;align-self:center}
+#sug .sg{display:flex;align-items:center;gap:10px;padding:10px 12px}
+#sug .sg-icon{font-size:17px;min-width:20px;color:var(--mut);text-align:center}
+#sug .sg-label{min-width:0;overflow:hidden;white-space:nowrap;text-overflow:ellipsis}
+@media(max-width:650px){#tabs{height:44px;min-height:44px;padding:4px 6px}#tablist .tab{flex-basis:140px;min-width:100px;max-width:140px}#nt{flex-basis:30px;width:30px;height:30px}}
+
+
+
+/* iOS Home Screen Safari fallback: no reader or white bars. */
+#external.tool{display:inline-flex;align-items:center;justify-content:center;text-decoration:none;color:var(--fg);min-width:33px;height:33px}
+#safariFallback[hidden]{display:none!important}
+#safariFallback{position:absolute;inset:0;z-index:8;display:grid;place-items:center;padding:18px;background:var(--bg);color:var(--fg);overflow:auto}
+.safari-fallback-card{width:min(440px,100%);padding:28px 24px;text-align:center;border:1px solid var(--line);border-radius:20px;background:var(--bar);box-shadow:0 16px 48px #0004}
+.safari-mark{display:grid;place-items:center;margin:0 auto 16px;border-radius:18px;width:62px;height:62px;font-size:30px;color:#fff;background:var(--accent)}
+.safari-fallback-card h2{font-size:20px;line-height:1.25;margin:0 0 10px;font-weight:650}
+.safari-fallback-card p{font-size:13px;color:var(--mut);line-height:1.6;margin:0 0 20px;overflow-wrap:anywhere}
+.safari-choices{display:flex;gap:10px;align-items:center;justify-content:center;flex-wrap:wrap}
+.safari-choices a,.safari-choices button{display:inline-flex;align-items:center;justify-content:center;min-height:42px;padding:11px 17px;border-radius:12px;font-size:14px;text-decoration:none;font-weight:600;cursor:pointer}
+.safari-primary{background:var(--accent);color:white!important}
+.safari-choices button{border:1px solid var(--line);background:var(--bg);color:var(--fg)}
+.safari-dismiss{margin:15px 0 8px;color:var(--mut);font-size:13px}
+.safari-fallback-card small{display:block;color:var(--mut);font-size:11px;line-height:1.5}
+
+/* Apple animated tabs: + follows the newest/rightmost tab in the same scroll rail. */
+#tabs{gap:0!important}
+#tablist{padding-right:12px;scroll-padding-inline:8px;align-items:center}
+#tablist #nt{position:relative!important;right:auto!important;flex:0 0 32px;width:32px;height:32px;z-index:2;align-self:center;box-shadow:none!important;background:var(--bar);margin-left:3px;margin-right:1px;transition:background .18s ease,scale .18s cubic-bezier(.2,.8,.2,1);touch-action:manipulation}
+#tablist #nt:active{scale:.91}
+#tablist .tab{transform:translateZ(0);transition:background .23s ease,color .2s ease,box-shadow .25s ease,opacity .2s ease!important;will-change:auto}
+#tablist .tab:hover:not(.on){background:color-mix(in srgb,var(--line) 70%,transparent)}
+#tablist .tab.on{box-shadow:inset 0 0 0 1px color-mix(in srgb,var(--accent) 32%,transparent),0 1px 5px #0002;animation:sbSelectGlow .2s ease-out both}
+#tablist .tab::after{display:block!important;top:auto;bottom:1px;left:14px;right:14px;height:2px;background:var(--accent);border-radius:2px;transform:scaleX(0);transform-origin:center;transition:transform .25s cubic-bezier(.2,.8,.2,1)}
+#tablist .tab.on::after{transform:scaleX(1)}
+#tablist .tab.sb-tab-enter{animation:sbTabEnter .28s cubic-bezier(.18,.85,.25,1) both!important}
+#tablist .tab.sb-tab-exit{pointer-events:none;animation:sbTabExit .22s cubic-bezier(.4,0,.8,1) both!important;overflow:hidden!important}
+@keyframes sbTabEnter{0%{opacity:0;transform:translateY(7px) scale(.93)}100%{opacity:1;transform:translateY(0) scale(1)}}
+@keyframes sbTabExit{0%{opacity:1;flex-basis:var(--sb-exit-width,178px);min-width:var(--sb-exit-width,178px);max-width:var(--sb-exit-width,178px);padding-left:9px;padding-right:9px;transform:translateY(0) scale(1)}100%{opacity:0;flex-basis:0;min-width:0;max-width:0;padding-left:0;padding-right:0;transform:translateY(-5px) scale(.85)}}
+@keyframes sbSelectGlow{from{filter:brightness(.92)}to{filter:brightness(1)}}
+@media(max-width:650px){#tablist #nt{flex-basis:30px;width:30px;height:30px}#tablist{padding-right:8px}}
+@media(prefers-reduced-motion:reduce){#tablist .tab.sb-tab-enter,#tablist .tab.sb-tab-exit,#tablist .tab.on{animation-duration:.001ms!important}#tablist .tab,#tablist .tab::after,#tablist #nt{transition-duration:.001ms!important}}
+
+/* iOS 27 PWA status-bar blur mitigation: the fixed, opaque guard is positioned
+   at the physical top edge, separate from the scrolling tab and toolbar UI.
+   It is a WebKit rendering workaround, not a browser privilege override. */
+#ios27-status-guard{display:none;position:fixed;top:0;left:0;width:100%;height:10px;
+  background:var(--bg);z-index:2147483000;pointer-events:none;transform:translateZ(0)}
+body.ios-standalone #ios27-status-guard{display:block}
+
+/* Visual styles apply ONLY to the Start page and Secure Search; browser chrome stays familiar. */
+.appearance-picker{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:7px;margin-top:9px}
+.appearance-choice{padding:5px 4px 7px;border:1px solid var(--line);background:var(--bg);border-radius:13px;min-width:0;display:flex;flex-direction:column;gap:6px;align-items:center;transition:border-color .18s,transform .18s,background .18s}
+.appearance-choice:hover{transform:translateY(-2px)}
+.appearance-choice.selected{border:2px solid var(--accent);background:color-mix(in srgb,var(--accent) 15%,var(--bg));padding:4px 3px 6px}
+.appearance-choice:focus-visible{outline:2px solid var(--accent);outline-offset:2px}
+.appearance-preview{height:53px;width:100%;min-width:0;border-radius:9px;display:flex;align-items:flex-end;justify-content:center;gap:5px;padding:10px 8px;position:relative;overflow:hidden}
+.appearance-preview i{display:block;flex:1;height:21px;max-width:25px;border-radius:6px}
+.appearance-preview i:last-child{height:29px}
+.preview-glass{background:linear-gradient(145deg,#19385f,#a3c8fa 55%,#6e69ac)}
+.preview-glass i{background:#d9eaff7c;border:1px solid #ffffff9c;box-shadow:inset 0 1px #ffffffc7;backdrop-filter:blur(5px)}
+.preview-solid{background:linear-gradient(135deg,#0c1420,#33475f)}
+.preview-solid i{background:#7896bd;border:1px solid #9bb3d1}
+.preview-solid i:first-child{background:#21344d}
+.preview-aero{background:linear-gradient(165deg,#40bded,#e2ffff 55%,#12bca8)}
+.preview-aero:before{content:'';position:absolute;top:-16px;left:12%;width:66%;height:30px;border-radius:50%;background:#fff9;filter:blur(7px)}
+.preview-aero i{background:linear-gradient(#ffffffdb,#76d9f9a8,#0f94c9b3);border:1px solid #f5ffff;box-shadow:0 2px 4px #0b729055,inset 0 1px #fff}
+.appearance-caption{font-size:11px;font-weight:650;white-space:nowrap;line-height:1.2}
+.appearance-help{font-size:11px;line-height:1.5;color:var(--mut);margin-top:8px}
+:root[data-appearance="glass"] #sf{background:rgba(28,37,55,.46);border:1px solid #ffffff70;box-shadow:0 10px 35px #0006,inset 0 1px #ffffff4c;backdrop-filter:blur(16px) saturate(150%);-webkit-backdrop-filter:blur(16px) saturate(150%)}
+:root[data-appearance="glass"] .tile{background:rgba(10,23,43,.43);border:1px solid #ffffff44;box-shadow:inset 0 1px #ffffff2b;backdrop-filter:blur(14px);-webkit-backdrop-filter:blur(14px)}
+:root[data-appearance="solid"] #start::after{content:"";position:absolute;inset:0;z-index:1;pointer-events:none;background:linear-gradient(155deg,#0b152b33,#0a132280)}
+:root[data-appearance="solid"] #sf{background:#182437!important;border:1px solid #40536c!important;box-shadow:0 7px 24px #07142388!important;backdrop-filter:none!important;-webkit-backdrop-filter:none!important}
+:root[data-appearance="solid"] #sq{color:#f4f8ff}
+:root[data-appearance="solid"] #go{background:#3274d4}
+:root[data-appearance="solid"] .tile{background:#202d40!important;border:1px solid #42526b;box-shadow:0 6px 20px #0714227d;backdrop-filter:none!important;-webkit-backdrop-filter:none!important}
+:root[data-appearance="solid"] #cz{background:#24344a;backdrop-filter:none!important}
+:root.light[data-appearance="solid"] #sf{background:#f5f8fc!important;border-color:#c1d3e7!important}
+:root.light[data-appearance="solid"] #sq{color:#1b293c}
+:root.light[data-appearance="solid"] .tile{background:#f2f6fe!important;color:#132b49;border-color:#a4c3e3}
+:root[data-appearance="aero"] #start{background-color:#7fdcf0}
+:root[data-appearance="aero"] #start::after{content:"";position:absolute;inset:0;z-index:1;pointer-events:none;background:radial-gradient(circle at 12% 20%,#ffffff91 0 3%,transparent 8%),radial-gradient(circle at 87% 15%,#ffffffa0 0 2%,transparent 7%),radial-gradient(circle at 84% 76%,#ffffff78 0 4%,transparent 10%),linear-gradient(145deg,#30c6ed36,#a4f9ff10 44%,#13efad35)}
+:root[data-appearance="aero"] #sf{background:linear-gradient(180deg,#ffffffed,#e3fcffbe)!important;border:1px solid #fff!important;box-shadow:inset 0 1px #fff,0 8px 28px #016b9f54,0 2px 0 #57c1f0!important;backdrop-filter:blur(10px) saturate(170%);-webkit-backdrop-filter:blur(10px) saturate(170%)}
+:root[data-appearance="aero"] #sq{color:#164868!important}
+:root[data-appearance="aero"] #sq::placeholder{color:#4387aa}
+:root[data-appearance="aero"] #go{background:linear-gradient(180deg,#48caff,#0872ce);border:1px solid #e8ffff;box-shadow:inset 0 2px #ffffff8f,0 3px 7px #1375ba44}
+:root[data-appearance="aero"] .tile{color:#124769;background:linear-gradient(160deg,#fffffff0,#baf1f2d6)!important;border:1px solid #fff;box-shadow:inset 0 1px #fff,0 5px 17px #017a8e4b;backdrop-filter:blur(12px) saturate(150%);-webkit-backdrop-filter:blur(12px) saturate(150%)}
+:root[data-appearance="aero"] .tile i{background:linear-gradient(145deg,#4cd4fd,#1882d9);color:white}
+:root[data-appearance="aero"] #clock{text-shadow:0 2px 17px #004c7c8a}
+:root[data-appearance="aero"] #cz{background:linear-gradient(180deg,#ffffffdc,#b9f1fae5);color:#0b608a;border:1px solid white;box-shadow:0 3px 12px #006a965a}
+@media(prefers-reduced-motion:reduce){.appearance-choice{transition:none}}
+</style><meta content="#0f1115" name="theme-color"/><meta content="yes" name="apple-mobile-web-app-capable"/><meta content="Secure Browser" name="apple-mobile-web-app-title"/><meta content="Secure Browser web app for iPhone, iPad, Mac, and desktop." name="description"/><link rel="manifest" href="manifest.webmanifest"/><link href="assets/image-42618491e818.png" rel="icon" type="image/png"/><link href="assets/image-c350f4ef9210.png" rel="apple-touch-icon"/><link rel="preload" as="image" href="assets/image-4928151514d8.png" fetchpriority="low"/></head><body>
+<div id="ios27-status-guard" aria-hidden="true"></div>
+<script>
+/* Apply only to Apple standalone Home Screen apps, not ordinary Safari tabs. */
+(function(){
+  var appleMobile=/iPad|iPhone|iPod/.test(navigator.userAgent)||
+    (navigator.platform==='MacIntel' && navigator.maxTouchPoints>1);
+  var standalone=navigator.standalone===true ||
+    (window.matchMedia && window.matchMedia('(display-mode: standalone)').matches);
+  if(appleMobile && standalone)document.body.classList.add('ios-standalone');
+})();
+</script>
+<div id="tabs"><div id="tablist"><div id="tabind"></div><button id="nt" title="New tab (Ctrl+T)" aria-label="New tab">＋</button></div></div>
+<div id="bar"><button id="bk" title="Back">←</button><button id="fw" title="Forward">→</button><button id="rl" title="Reload">⟳</button>
+<div id="urlwrap"><span id="lock">🔒</span><input id="url" placeholder="Search Secure Search or enter address" spellcheck="false"/>
+<button id="umic" title="Voice search">🎤</button><button id="star" title="Bookmark this page">☆</button></div>
+<button class="tool" id="bmb" title="Bookmarks"><img alt="Bookmarks" class="ico" src="assets/image-12657b504db3.png"/></button><button aria-label="Toggle proxy browsing" aria-pressed="false" class="tool" id="compat" title="Proxy browsing ON by default — click to toggle">⊞</button><a aria-label="Open original website in Safari" class="tool" id="external" title="Open original website in Safari" href="#" rel="noopener noreferrer">↗</a><button class="tool" id="gear" title="Customize start page and theme"><img alt="Customize" class="ico" src="assets/image-0de516e4874c.png"/></button></div>
+<div id="content"><div id="start"><video autoplay="" hidden="" id="bgm" loop="" muted="" playsinline=""></video><div id="ov"></div><div id="layer"></div>
+<div id="sc"><div id="clock"></div><form id="sf"><input autocomplete="off" id="sq" placeholder="Search Secure Search" spellcheck="false"/><button id="smic" title="Voice search" type="button">🎤</button><button id="go">Search</button></form><div id="tiles"></div></div>
+<button id="cz">🎨 Customize</button></div>
+<div id="views"></div>
+<section id="safariFallback" hidden aria-live="polite" aria-label="Website loading failed">
+  <div class="safari-fallback-card">
+    <span class="safari-mark" aria-hidden="true">↗</span>
+    <h2>This page isn't displaying correctly</h2>
+    <p id="safariDetail">Secure Browser couldn't load the original website correctly. View the real page in Safari instead.</p>
+    <div class="safari-choices"><a href="#" id="safariOpen" class="safari-primary" rel="noopener noreferrer">Open in Safari</a><button type="button" id="safariRetry">Try again</button></div>
+    <button type="button" class="safari-dismiss" id="safariDismiss">Keep this page</button>
+    <small>Tap <b>Done</b> in the Safari page to return to Secure Browser.</small>
+  </div>
+</section></div>
+<div class="pop" id="bmp"><h4>📁 Bookmarks</h4><div id="bml"></div></div>
+<aside class="side" id="panel"><div class="row"><h3 style="flex:1">🎨 Customize</h3><button id="px">✕</button></div>
+<label>App theme</label><select id="mode"><option value="dark">Dark</option><option value="light">Light</option></select>
+<label>Start page &amp; Secure Search style</label>
+<div class="appearance-picker" role="group" aria-label="Visual theme">
+  <button type="button" class="appearance-choice" data-appearance="glass" aria-pressed="true"><span class="appearance-preview preview-glass"><i></i><i></i></span><span class="appearance-caption">Glass</span></button>
+  <button type="button" class="appearance-choice" data-appearance="solid" aria-pressed="false"><span class="appearance-preview preview-solid"><i></i><i></i></span><span class="appearance-caption">Solid</span></button>
+  <button type="button" class="appearance-choice" data-appearance="aero" aria-pressed="false"><span class="appearance-preview preview-aero"><i></i><i></i></span><span class="appearance-caption">Frutiger Aero</span></button>
+</div>
+<div class="appearance-help">Changes your start page and Secure Search together. Your wallpaper and other settings stay saved.</div>
+<label>Dynamic theme</label><select id="dyn"><option value="off">Off</option><option value="system">Follow device light / dark</option><option value="time">Day &amp; night (light 7am–7pm)</option><option value="cycle">Color cycle (slow rainbow)</option></select>
+<label>Search engine</label><select id="eng"></select><div id="compat-note">Secure Search is the built-in search engine. Website links still open through the existing proxy; use ⊞ for direct iframe mode if a site needs it. Some sites block proxy viewing. Do not enter passwords or other sensitive information through the proxy.</div>
+<label>Accent color</label><input id="accent" type="color"/>
+<label>Start page background (image or video)</label><label class="btn fbtn">Choose image or video<input accept="image/*,video/*" hidden="" id="bgf" type="file"/></label><div class="row" style="margin-top:8px"><button class="btn" id="bgx">Remove background</button></div>
+<label>Background dimming</label><input id="dim" max="85" min="0" type="range"/>
+<label>Background blur</label><input id="blur" max="20" min="0" type="range"/>
+<label><input id="clk" type="checkbox"/> Show clock</label>
+<label>Tabs</label>
+<div class="ed"><span style="width:auto;flex:1">Sleep inactive tabs after</span><select id="sleepsel" style="width:auto"><option value="0">Never</option><option value="5">5 minutes</option><option value="10">10 minutes</option><option value="30">30 minutes</option><option value="60">1 hour</option></select></div>
+<label class="chk"> Clear browsing data when Secure Browser closes</label>
+<label>Start page items</label>
+<div class="row" style="flex-wrap:wrap"><label class="btn fbtn">＋ Image / GIF<input accept="image/*" hidden="" id="addimg" type="file"/></label><label class="btn fbtn">＋ Video<input accept="video/*" hidden="" id="addvid" type="file"/></label><button class="btn" id="addtxt">＋ Text</button></div>
+<label class="chk"><input id="editmode" type="checkbox"/> Edit layout: drag items on the start page, scroll over one to resize</label>
+<div id="itlist"></div><div id="ited"></div>
+<div class="row" style="margin-top:16px"><button class="btn warn" id="resetApp" type="button">Clear Secure Browser local data</button></div></aside>
+<div id="iv"><div id="ivbar"><button id="ivtab">Open in new tab</button><button id="ivx">✕</button></div><img alt="" id="ivimg"/></div>
+<div id="sug"></div>
+<div id="tmenu"></div>
+<button id="zenbtn" title="Show toolbar (Alt+Z)">☰</button>
+<div id="toast"></div>
+<script>(function (g) {
+  g.ENGINES = {
+    secure: {name:'Secure Search', search:new URL('secure-search.html?q', location.href).href,
+      host:/.*/,path:'/secure-search.html',param:'q',suggest:'/api/suggest?q='}
+  };
+  Object.values(g.ENGINES).forEach(e => { e.search += '='; });
+  if (typeof module !== 'undefined') module.exports = g.ENGINES;
+})(typeof window !== 'undefined' ? window : globalThis);
+</script><script>'use strict';
+/* Secure Browser web adaptation of the supplied Electron UI. Browser APIs only. */
+const $ = id => document.getElementById(id);
+const readJSON = (name, fallback) => {try {const value=JSON.parse(localStorage.getItem(name));return value ?? fallback;}catch{return fallback;}};
+const defaults={mode:'dark',accent:'#4f8cff',dim:30,blur:0,clock:true,engine:'secure',items:[],pins:[],dyn:'off',sleep:10,compat:true,appearance:'glass'}; const S={...defaults,...readJSON('sb-web-v2',{})}; if(S.proxyConfiguredVersion!==1){S.compat=true;S.proxyConfiguredVersion=1;}
+if (!['glass','solid','aero'].includes(S.appearance)) S.appearance='glass';
+if (!Array.isArray(S.items)) S.items=[];
+if (!Array.isArray(S.pins)) S.pins=[];
+if (!ENGINES[S.engine]) S.engine='secure';
+let BM=readJSON('sbm-web-v2',[]);
+if (!Array.isArray(BM)) BM=[];
+const save=()=>{try{localStorage.setItem('sb-web-v2',JSON.stringify(S));localStorage.setItem('sb-appearance-v1',S.appearance);}catch{toast('Device storage is full or unavailable');}};
+const saveBM=()=>{try{localStorage.setItem('sbm-web-v2',JSON.stringify(BM));}catch{}renderTiles();};
+const DEFAULT_LINKS=[['Secure Search',new URL('secure-search.html',location.href).href],['YouTube','https://www.youtube.com'],['Wikipedia','https://www.wikipedia.org'],['GitHub','https://github.com'],['Gmail','https://mail.google.com']];
+let toastTimer;
+function toast(message){const e=$('toast');e.textContent=message;e.classList.add('on');clearTimeout(toastTimer);toastTimer=setTimeout(()=>e.classList.remove('on'),3500);}
+const favicon=url=>{try{let u=new URL(url);if(u.origin===location.origin&&u.pathname.endsWith('/secure-search.html'))return new URL('assets/secure-search-icon.webp',location.href).href;if(!/^https?:$/.test(u.protocol))return '';return 'https://www.google.com/s2/favicons?sz=64&domain_url='+encodeURIComponent(u.origin);}catch{return '';}};
+const faviconFallback = (img,url)=>{const other=(()=>{try{return new URL(url).origin+'/favicon.ico';}catch{return '';}})();let once=false;img.onerror=()=>{if(!once && other){once=true;img.src=other;}else img.hidden=true;};};
+function renderTiles(){const tiles=$('tiles');tiles.replaceChildren();const list=BM.length? BM.slice(0,12).map(x=>({name:x.title||x.url,url:x.url,icon:x.icon||favicon(x.url)})):DEFAULT_LINKS.map(([name,url])=>({name,url,icon:favicon(url)}));
+ list.forEach(({name,url,icon},i)=>{const tile=document.createElement('div');tile.className='tile';tile.style.animationDelay=(.18+i*.055)+'s';tile.title=url;const block=document.createElement('i');block.textContent=(name||'?')[0].toUpperCase();const label=document.createElement('span');label.textContent=name; if(icon){const img=document.createElement('img');img.alt='';img.hidden=true;img.decoding='async';img.onload=()=>{block.style.background='#fff';img.hidden=false;block.textContent='';block.append(img)};faviconFallback(img,url);img.src=icon;}tile.append(block,label);tile.addEventListener('click',()=>go(url));tiles.append(tile);});}
+function renderBM(){const el=$('bml');el.replaceChildren();if(!BM.length){const d=document.createElement('div');d.className='empty';d.textContent='No bookmarks yet. Use ☆ on a website.';el.append(d);return;}
+ BM.forEach((b,i)=>{const d=document.createElement('div');d.className='item';const wi=document.createElement('div');wi.className='bm-icon-wrap';const tx=document.createElement('span');tx.className='bm-icon-fallback';tx.textContent=(b.title||b.url||'?')[0].toUpperCase();const img=document.createElement('img');img.className='bm-favicon';img.hidden=true;img.alt='';img.onload=()=>{img.hidden=false;tx.hidden=true};faviconFallback(img,b.url);img.src=b.icon||favicon(b.url);wi.append(tx,img);
+ const label=document.createElement('span');label.className='bookmark-name';label.textContent=b.title||b.url;const del=document.createElement('button');del.textContent='✕';del.title='Remove bookmark';del.onclick=event=>{event.stopPropagation();BM.splice(i,1);saveBM();renderBM();starState();};d.append(wi,label,del);d.onclick=()=>{go(b.url);$('bmp').classList.remove('on')};el.append(d);});}
+// IndexedDB for background and optional decorative start-page items.
+function db(){return new Promise((resolve,reject)=>{const req=indexedDB.open('sb-web-files',1);req.onupgradeneeded=()=>req.result.createObjectStore('f');req.onsuccess=()=>resolve(req.result);req.onerror=()=>reject(req.error);});}
+async function dbPutK(key,blob){const d=await db();return new Promise((resolve,reject)=>{const t=d.transaction('f','readwrite');t.objectStore('f').put(blob,key);t.oncomplete=resolve;t.onerror=()=>reject(t.error);});}
+async function dbDelK(key){const d=await db();return new Promise((resolve,reject)=>{const t=d.transaction('f','readwrite');t.objectStore('f').delete(key);t.oncomplete=resolve;t.onerror=()=>reject(t.error);});}
+async function dbGetK(key){const d=await db();return new Promise(resolve=>{const q=d.transaction('f').objectStore('f').get(key);q.onsuccess=()=>resolve(q.result);q.onerror=()=>resolve(null);});}
+const dbPut=blob=>dbPutK('bg',blob);
+const dbDel=()=>dbDelK('bg');
+const dbGet=()=>dbGetK('bg');
+let bgURL=null;
+async function loadBg(){const media=$('bgm');try{const blob=await dbGet();if(bgURL)URL.revokeObjectURL(bgURL);bgURL=null;media.pause();media.removeAttribute('src');media.hidden=true;document.documentElement.style.setProperty('--start-bg',`url("assets/image-4928151514d8.png")`);if(!blob)return;bgURL=URL.createObjectURL(blob);if(blob.type.startsWith('video/')){media.src=bgURL;media.hidden=false;media.play().catch(()=>{});}else document.documentElement.style.setProperty('--start-bg',`url("${bgURL}")`);}catch(e){console.warn('Background storage unavailable',e);}}
+let tickClock=()=>{$('clock').textContent=new Date().toLocaleTimeString([], {hour:'2-digit',minute:'2-digit'});};
+tickClock();setInterval(tickClock,15000);
+const systemDark=matchMedia('(prefers-color-scheme: dark)');
+let colorTimer=null;
+function effectiveMode(){if(S.dyn==='system')return systemDark.matches?'dark':'light';if(S.dyn==='time'){const h=new Date().getHours();return h>=7&&h<19?'light':'dark';}return S.mode;}
+function applyTheme(){document.documentElement.dataset.appearance=S.appearance;document.documentElement.classList.toggle('light',effectiveMode()==='light');
+ for(const b of document.querySelectorAll('[data-appearance].appearance-choice')){const active=b.dataset.appearance===S.appearance;b.setAttribute('aria-pressed',String(active));b.classList.toggle('selected',active);}
+ try{localStorage.setItem('sb-appearance-v1',S.appearance);}catch{}
+ for(const frame of document.querySelectorAll('#views iframe')){try{if(frame.contentWindow&&frame.contentDocument?.location?.origin===location.origin)frame.contentWindow.postMessage({type:'secure-browser:appearance',appearance:S.appearance},location.origin);}catch{}}document.documentElement.style.setProperty('--accent',S.accent);document.documentElement.style.setProperty('--bg-blur',S.blur+'px');
+ $('mode').value=S.mode;$('dyn').value=S.dyn;$('eng').value=S.engine;$('accent').value=S.accent;$('dim').value=S.dim;$('blur').value=S.blur;$('clk').checked=!!S.clock;$('sleepsel').value=S.sleep;
+ $('ov').style.opacity=S.dim/100;$('clock').style.display=S.clock?'':'none';$('bgm').style.filter=`blur(${S.blur}px)`;$('sq').placeholder='Search with '+ENGINES[S.engine].name.split(' (')[0];
+ $('compat').classList.toggle('on',!!S.compat);$('compat').setAttribute('aria-pressed',String(!!S.compat));$('compat').title=S.compat?'Proxy browsing ON — click for direct iframe':'Direct iframe ON — click for proxy browsing';
+ const color=getComputedStyle(document.documentElement).getPropertyValue('--bg').trim();document.querySelector('meta[name="theme-color"]').content=color;
+ clearInterval(colorTimer);colorTimer=null;if(S.dyn==='cycle'){const colorize=()=>{const hue=(Date.now()/190)%360;document.documentElement.style.setProperty('--accent',`hsl(${hue},85%,60%)`)};colorize();colorTimer=setInterval(colorize,1000);}
+ }
+systemDark.addEventListener?.('change',()=>{if(S.dyn==='system')applyTheme();});
+setInterval(()=>{if(S.dyn==='time')applyTheme();},60000);
+// URI parsing stays close to the supplied desktop application's rules.
+function clean(raw){let input=String(raw||'').trim();if(!input)return null;
+ if(/^(javascript|data|blob|file|about|chrome|view-source|vbscript):/i.test(input))return null;
+ if(/^https?:\/\//i.test(input)){try{const u=new URL(input);return u.href;}catch{return null;}}
+ if(!/\s/.test(input)&&/^(?:localhost|(?:\d{1,3}\.){3}\d{1,3}|\[[0-9a-f:]+\]|[\w-]+(?:\.[\w-]+)+)(?::\d+)?(?:[/?#].*)?$/i.test(input)){
+  const local=/^(?:localhost|127\.|10\.|192\.168\.|172\.(?:1[6-9]|2\d|3[01])\.|\[::1\])/i.test(input);try{return new URL((local?'http://':'https://')+input).href;}catch{return null;}}
+ return ENGINES[S.engine].search+encodeURIComponent(input);
+}
+let tabs=[],current=null,nextTabId=0,closed=[];
+const groupColors={red:'#ef5350',orange:'#ffa726',yellow:'#ffd54f',green:'#66bb6a',blue:'#42a5f5',purple:'#ab47bc'};
+function stripTrackers(url){return url;} // No claim of cross-origin URL tracking protection.
+function setGroup(tab,color){tab.group=color||null;tab.el.dataset.g=color||'';if(color)tab.el.style.setProperty('--g',groupColors[color]);}
+function savePins(){S.pins=tabs.filter(t=>t.pinned&&t.url).map(t=>({url:t.url,title:t.title,group:t.group}));save();}
+function setPinned(tab,pin){tab.pinned=pin;tab.el.classList.toggle('pinned',pin);tabs.splice(tabs.indexOf(tab),1);let ix=tabs.filter(t=>t.pinned).length;tabs.splice(ix,0,tab);$('tablist').insertBefore(tab.el,tabs[ix+1]?.el||$('nt'));savePins();syncInd();}
+function setTabTitle(tab,title){tab.title=title||'New Tab';tab.el.querySelector('span').textContent=tab.title;tab.el.title=tab.url||tab.title;}
+function setTabIcon(tab,url){const img=tab.el.querySelector('img');img.hidden=true;img.onload=()=>{img.hidden=false};img.onerror=()=>{img.hidden=true};if(url)img.src=url;}
+function syncInd(){if(!current)return;const e=$('tabind'),tab=current.el;if(!tab.isConnected)return;e.style.width=tab.offsetWidth+'px';e.style.height=tab.offsetHeight+'px';e.style.transform=`translate(${tab.offsetLeft}px,${tab.offsetTop}px)`;e.style.opacity='1';}
+window.addEventListener('resize',syncInd);$('tablist').addEventListener('scroll',syncInd,{passive:true});
+function newTab(url,background=false,options={}){
+ const t={id:++nextTabId,url:'',title:options.title||'New Tab',frame:null,history:[],historyIndex:-1,group:options.group||null,pinned:false,safariProblem:'',sleeping:false,last:Date.now(),el:document.createElement('div')};
+ t.el.className='tab';t.el.innerHTML='<u></u><img hidden alt=""><span></span><em></em><b>✕</b>';setTabTitle(t,t.title);t.el.querySelector('b').onclick=e=>{e.stopPropagation();closeTab(t);};t.el.onclick=()=>{if(t.suppressClick){t.suppressClick=false;return;}selectTab(t);};
+ t.el.oncontextmenu=e=>{e.preventDefault();tabMenu(e,t);};t.el.draggable=true;t.el.addEventListener('dragstart',e=>{dragged=t;e.dataTransfer.setData('text/plain','tab');e.dataTransfer.effectAllowed='move';t.el.classList.add('dragging');});
+ t.el.addEventListener('dragover',e=>{if(dragged&&dragged!==t&&dragged.pinned===t.pinned){e.preventDefault();reorder(dragged,t,e.clientX>t.el.getBoundingClientRect().left+t.el.offsetWidth/2);}});
+ t.el.addEventListener('dragend',()=>{dragged=null;t.el.classList.remove('dragging');savePins();});
+ // Long press tab for actions on iOS.
+ let timer=null,startX=0,startY=0;t.el.addEventListener('touchstart',e=>{if(e.touches.length!==1)return;startX=e.touches[0].clientX;startY=e.touches[0].clientY;timer=setTimeout(()=>{timer=null;t.suppressClick=true;tabMenu({clientX:startX,clientY:startY},t);},650);},{passive:true});
+ t.el.addEventListener('touchmove',e=>{if(e.touches.length&&Math.hypot(startX-e.touches[0].clientX,startY-e.touches[0].clientY)>9){clearTimeout(timer);timer=null;}},{passive:true});
+ t.el.addEventListener('touchend',()=>{clearTimeout(timer);timer=null;});
+ $('tablist').insertBefore(t.el,$('nt'));tabs.push(t);t.el.classList.add('sb-tab-enter');t.el.addEventListener('animationend',e=>{if(e.target===t.el)t.el.classList.remove('sb-tab-enter');},{once:true});if(t.group)setGroup(t,t.group);if(options.pinned)setPinned(t,true);
+ if(url){if(options.sleeping){t.url=clean(url)||'';t.history=[t.url];t.historyIndex=0;setTabTitle(t,options.title||hostLabel(t.url));t.sleeping=true;t.el.classList.add('sleep');setTabIcon(t,favicon(t.url));}else navigate(t,url,true);}
+ if(!background||!current)selectTab(t);else syncInd();if(!options.pinned){requestAnimationFrame(()=>{if(t.el.isConnected&&t.el.parentElement===$('tablist'))$('nt').scrollIntoView({block:'nearest',inline:'nearest',behavior:window.matchMedia('(prefers-reduced-motion: reduce)').matches?'instant':'smooth'});});}return t;
+}
+let dragged=null;
+function reorder(a,b,after){const ai=tabs.indexOf(a);tabs.splice(ai,1);const bi=tabs.indexOf(b);tabs.splice(after?bi+1:bi,0,a);$('tablist').insertBefore(a.el,after?b.el.nextSibling:b.el);syncInd();}
+function hostLabel(url){try{return new URL(url).hostname.replace(/^www\./,'');}catch{return 'Website';}}
+const IS_APPLE_HOME_APP=(/iPhone|iPad|iPod/.test(navigator.userAgent)||(navigator.platform==='MacIntel'&&navigator.maxTouchPoints>1))&&(navigator.standalone===true||window.matchMedia('(display-mode: standalone)').matches);
+const PROXY_BASE=location.origin;
+const PROXY_ORIGIN=new URL(PROXY_BASE).origin;
+const PROXY_SAME_ORIGIN=location.protocol!=='file:'&&location.origin===PROXY_ORIGIN;
+function getProxiedUrl(url){return PROXY_BASE+'/proxy?url='+encodeURIComponent(url);}
+const SECURE_SEARCH_PAGE=new URL('secure-search.html',location.href).href;
+function isSecureSearchUrl(url){try{const u=new URL(url);return u.origin===new URL(SECURE_SEARCH_PAGE).origin&&u.pathname===new URL(SECURE_SEARCH_PAGE).pathname;}catch{return false;}}
+function searchUrl(query,page=0,kind='all'){const u=new URL(SECURE_SEARCH_PAGE);if(query)u.searchParams.set('q',query.slice(0,300));if(page)u.searchParams.set('page',Math.min(4,page));if(['images','videos','maps'].includes(kind))u.searchParams.set('kind',kind);return u.href;}
+let recentQueries=readJSON('ss-recent-queries-v1',[]);if(!Array.isArray(recentQueries))recentQueries=[];
+function rememberSearch(url){if(!isSecureSearchUrl(url))return;try{const q=new URL(url).searchParams.get('q')?.trim();if(!q)return;recentQueries=[q,...recentQueries.filter(x=>x.toLowerCase()!==q.toLowerCase())].slice(0,35);localStorage.setItem('ss-recent-queries-v1',JSON.stringify(recentQueries));}catch{}}
+
+
+// Modern search engines cannot reliably run in an HTML rewriting proxy.
+// Display a clean local home page instead of a broken remote homepage.
+// Actual search queries still use each engine's real search URL.
+function searchEngineHome(url){return null;}
+function isWikipedia(url){try{return /(^|\.)wikipedia\.org$/i.test(new URL(url).hostname)}catch{return false}}
+function youtubeInfo(url){
+ try{
+  const u=new URL(url),host=u.hostname.toLowerCase();
+  if(!(/(^|\.)youtube\.com$/.test(host)||host==='youtu.be'||host==='youtube-nocookie.com'||host==='www.youtube-nocookie.com'))return null;
+  let id=host==='youtu.be'?u.pathname.slice(1):u.searchParams.get('v')||u.pathname.match(/^\/(?:shorts|live|embed|v)\/([A-Za-z0-9_-]{11})/)?.[1];
+  if(!/^[A-Za-z0-9_-]{11}$/.test(id||''))id=null;
+  return {id,query:u.searchParams.get('search_query')||'',host};
+ }catch{return null}
+}
+function internalVideoUrl(url){const info=youtubeInfo(url);if(!info)return null;
+ if(info.host==='youtu.be'&&info.id)url='https://www.youtube.com/watch?v='+info.id;
+ // Preserve the complete YouTube route (home, results, channel, Shorts,
+ // playlists and watch pages) inside Secure Browser's original tab system.
+ const page=new URL('secure-youtube.html',location.href);
+ page.searchParams.set('target',url);
+ return page.href;
+}
+
+function launchYouTubeSafari(url){
+ if(!IS_APPLE_HOME_APP || !youtubeInfo(url))return false;
+ // Popup opening must happen synchronously in the user gesture. On systems
+ // that disallow it, an explicit hyperlink remains available in the browser.
+ if(navigator.userActivation && !navigator.userActivation.isActive)return false;
+ try{
+   const link=document.createElement('a');
+   link.href=url;link.target='_blank';link.rel='noopener noreferrer';
+   link.style.display='none';document.body.appendChild(link);
+   link.click();link.remove();
+   return true;
+ }catch(_){return false;}
+}
+function makeFrame(t,url){
+ if(t.frame){t.frame.remove();t.frame=null;}
+ // Apple Home Screen: YouTube uses the authentic site through Safari,
+ // not our proxy or the in-browser replica/player.
+ if(IS_APPLE_HOME_APP && youtubeInfo(url)){
+   t.sleeping=false;t.el.classList.remove('sleep','loading');
+   t.safariProblem='YouTube opens in Safari so its home page, channels, Shorts, search and real player work correctly.';
+   t.safariTarget=url;
+   if(t===current)updateSafariFallback();
+   return;
+ }
+ t.sleeping=false;t.el.classList.remove('sleep');
+ const frame=document.createElement('iframe');
+ const engineHome=searchEngineHome(url);
+ t.engineHome=engineHome;
+ const videoUrl=internalVideoUrl(url),internal=videoUrl||isSecureSearchUrl(url);
+ const useProxy=!internal&&!engineHome&&!!S.compat&&/^https?:\/\//i.test(url)&&!/(?:^|\.)(?:localhost|local)$/.test(hostLabel(url));
+ frame.setAttribute('sandbox',useProxy
+   ? ('allow-scripts allow-forms allow-modals allow-popups allow-popups-to-escape-sandbox allow-downloads'+(PROXY_SAME_ORIGIN?'':' allow-same-origin'))
+   : internal
+     ? 'allow-scripts allow-forms allow-same-origin allow-popups allow-popups-to-escape-sandbox'
+     : 'allow-scripts allow-forms allow-modals allow-popups allow-popups-to-escape-sandbox allow-downloads allow-top-navigation-by-user-activation');
+ frame.dataset.proxyMode=useProxy?'on':'off';frame.dataset.engineHome=engineHome||'';
+ frame.referrerPolicy=videoUrl?'strict-origin-when-cross-origin':'no-referrer';
+ frame.setAttribute('allow','autoplay; encrypted-media; fullscreen; picture-in-picture');frame.allowFullscreen=true;frame.title=t.title;
+ frame.addEventListener('load',()=>{
+   if(frame!==t.frame)return;
+   t.el.classList.remove('loading');
+   if(!useProxy){try{const doc=frame.contentDocument;if(doc?.title)setTabTitle(t,doc.title);}catch{}}
+ });
+ frame.addEventListener('error',()=>{
+   if(frame!==t.frame)return;
+   t.el.classList.remove('loading');
+   if(useProxy)showSafariFallback(t,'The website failed to load through Secure Browser.');
+ });
+ t.el.classList.add('loading');t.frame=frame;
+ $('views').append(frame);frame.classList.toggle('on',t===current);
+ frame.src=(videoUrl|| (engineHome?new URL('engine-home.html?e='+encodeURIComponent(engineHome),location.href).href:(useProxy?getProxiedUrl(url):url)));
+ setTimeout(()=>{if(t.frame===frame)t.el.classList.remove('loading');},8500);
+}
+// Internal Secure Search is a trusted same-origin document. Its URLs are verified
+// before they are allowed to navigate the real browser tab.
+window.addEventListener('message',event=>{
+ if(event.origin!==location.origin||!event.data||!/^secure-search:(?:query|navigate|home)$/.test(event.data.type))return;
+ const t=tabs.find(x=>x.frame?.contentWindow===event.source&&isSecureSearchUrl(x.url));
+ if(!t)return;
+ if(event.data.type==='secure-search:home') {navigate(t,SECURE_SEARCH_PAGE,true);return;}
+ if(event.data.type==='secure-search:query') {
+  const q=typeof event.data.query==='string'?event.data.query.trim().slice(0,300):'';
+  const page=Math.max(0,Math.min(4,Number(event.data.page)||0));
+  const kind=['images','videos','maps'].includes(event.data.kind)?event.data.kind:'all';
+  if(q)navigate(t,searchUrl(q,page,kind),true);
+  return;
+ }
+ if(event.data.type==='secure-search:navigate') {
+  let u;try{u=new URL(event.data.url);if(!/^https?:$/.test(u.protocol))return;}catch{return;}
+  if(event.data.newTab)newTab(u.href);else navigate(t,u.href,true);
+ }
+});
+// Report resource loading failures; never rewrite them into a reader page.
+window.addEventListener('message',event=>{
+ if(event.data?.type!=='secure-browser:assets-failed')return;
+ if(event.origin!==PROXY_ORIGIN && !(PROXY_SAME_ORIGIN && event.origin==='null'))return;
+ const t=tabs.find(x=>x.frame?.contentWindow===event.source && x.frame?.dataset.proxyMode==='on');
+ if(!t || t.url!==event.data.url)return;
+ const f=event.data.failures||{};
+ if((f.stylesheet||0)>0||(f.script||0)>=3)showSafariFallback(t,'Website styles or scripts did not load correctly.');
+});
+// Proxy reports failures originating inside the iframe. A cross-origin page cannot
+// generally be visually inspected by the parent, so never pretend to detect all layouts.
+window.addEventListener('message', event => {
+ if (!event.data || !['secure-browser:proxy-error','secure-browser:layout-broken'].includes(event.data.type)) return;
+ if (event.origin!==PROXY_ORIGIN && !(PROXY_SAME_ORIGIN && event.origin==='null')) return;
+ const t=tabs.find(x=>x.frame?.contentWindow===event.source && x.frame.dataset.proxyMode==='on');
+ if(!t || t.url!==event.data.url)return;
+ showSafariFallback(t,event.data.type==='secure-browser:proxy-error'?'This website refused the proxy request or took too long to respond.':'The website loaded with missing styles or scripts.');
+});
+// Links to YouTube clicked inside proxied pages bypass proxy automatically.
+// The frame itself opens Safari in the tap handler; show a manual link only
+// if the system blocks that opening.
+window.addEventListener('message',event=>{
+ if(!IS_APPLE_HOME_APP||event.data?.type!=='secure-browser:youtube-external')return;
+ if(event.origin!==PROXY_ORIGIN && !(PROXY_SAME_ORIGIN&&event.origin==='null'))return;
+ const t=tabs.find(x=>x.frame?.contentWindow===event.source&&x.frame.dataset.proxyMode==='on');
+ if(!t||!youtubeInfo(event.data.url))return;
+ // Do not replace the proxied page when the Safari sheet closes.
+ t.safariTarget=event.data.url;
+ t.safariProblem='Open this YouTube link in Safari for the full website and player.';
+ if(t===current)updateSafariFallback();
+});
+// Protected internal YouTube screens navigate through the original browser tab.
+window.addEventListener('message',event=>{
+ if(event.origin!==location.origin||!event.data||typeof event.data.type!=='string')return;
+ const t=tabs.find(x=>x.frame?.contentWindow===event.source);
+ if(!t)return;
+  if(event.data.type==='secure-browser:youtube-query'&&youtubeInfo(t.url)){
+  const q=typeof event.data.query==='string'?event.data.query.trim().slice(0,160):'';
+  if(q)navigate(t,'https://www.youtube.com/results?search_query='+encodeURIComponent(q),true);
+ }
+ if(event.data.type==='secure-browser:youtube-search'&&youtubeInfo(t.url))navigate(t,'https://www.youtube.com',true);
+ if(event.data.type==='secure-browser:youtube-open'&&youtubeInfo(t.url)){
+  const u=event.data.url;
+  // Route ALL YouTube pages, not just watch links, through the trusted
+  // same-origin YouTube UI. Never accept unrelated cross-origin URLs here.
+  try {const target=new URL(u);if(/^https:$/.test(target.protocol)&&youtubeInfo(target.href))navigate(t,target.href,true);}catch{}
+ }
+});
+// The shipped proxy's injected shim sends this on each proxied page load.
+// Only trust the expected backend frame, and never interpret arbitrary postMessages.
+window.addEventListener('message',event=>{
+ if(!S.compat||!event.data||event.data.type!=='secure-browser:navigated')return;
+ if(event.origin!==PROXY_ORIGIN&&!(PROXY_SAME_ORIGIN&&event.origin==='null'))return;
+ const t=tabs.find(item=>item.frame?.contentWindow===event.source&&item.frame.dataset.proxyMode==='on');
+ if(!t)return;
+ let actual;
+ try{actual=new URL(event.data.url);if(!/^https?:$/.test(actual.protocol))return;}catch{return;}
+ const next=actual.href;
+ if(t.url!==next){
+   t.url=next;
+   t.safariProblem='';t.safariTarget='';
+   if(t.history[t.historyIndex]!==next){
+     t.history=t.history.slice(0,t.historyIndex+1);
+     t.history.push(next);t.historyIndex=t.history.length-1;
+   }
+   setTabIcon(t,favicon(next));savePinsIfNeeded(t);
+ }
+ const title=typeof event.data.title==='string'&&event.data.title.trim()?event.data.title.trim().slice(0,140):hostLabel(next);
+ setTabTitle(t,title);
+ if(t===current)updateUI();
+});
+function navigate(t,raw,push=true){const url=clean(raw);if(!url){toast('Enter a website address or search');return;}
+ // A real user-activated navigation can launch Safari automatically.
+ // Async postMessages cannot reliably open an external browsing view on iOS.
+ if(IS_APPLE_HOME_APP && youtubeInfo(url))launchYouTubeSafari(url);
+ t.url=url;t.last=Date.now();t.safariProblem='';t.safariTarget='';rememberSearch(url);if(push){t.history=t.history.slice(0,t.historyIndex+1);t.history.push(url);t.historyIndex=t.history.length-1;}
+ setTabTitle(t,isSecureSearchUrl(url)?('Secure Search'+(searchTerm(url)?' — '+searchTerm(url):'')):(youtubeInfo(url)?'YouTube':hostLabel(url)));setTabIcon(t,favicon(url));makeFrame(t,url);if(t===current){updateUI();updateSafariFallback();}savePinsIfNeeded(t);}
+function savePinsIfNeeded(t){if(t.pinned)savePins();}
+function go(query){hideSuggestions();hideMenu();const u=clean(query);if(!u)return; if(!current)newTab();navigate(current,u,true);selectTab(current);$('sq').value='';$('url').blur();}
+function selectTab(t){if(!t||!tabs.includes(t))return;current=t;t.last=Date.now();if(t.sleeping&&t.url)makeFrame(t,t.url);
+ for(const x of tabs){x.el.classList.toggle('on',x===t);x.frame?.classList.toggle('on',x===t);}
+ $('start').classList.toggle('on',!t.url);updateUI();updateSafariFallback();syncInd();setTimeout(()=>{if(t.el.isConnected){const scrollTarget=(t.el.nextElementSibling===$('nt'))?$('nt'):t.el;scrollTarget.scrollIntoView({block:'nearest',inline:'nearest',behavior:window.matchMedia('(prefers-reduced-motion: reduce)').matches?'instant':'smooth'});syncInd();}},30);pops();hideMenu();}
+function updateUI(){if(!current)return;let url=current.url||'';const term=isSecureSearchUrl(url)?(new URL(url).searchParams.get('q')||''):searchTerm(url);$('url').value=term??url;$('lock').textContent=!url||isSecureSearchUrl(url)?'⌕':url.startsWith('https:')?'🔒':'⚠';$('lock').title=!url?'New tab':url.startsWith('https:')?'HTTPS URL (not a site safety verdict)':'Non-HTTPS URL';$('bk').disabled=current.historyIndex<=0;$('fw').disabled=current.historyIndex>=current.history.length-1;$('rl').disabled=!url;syncSafariLink($('external'),/^https?:\/\//i.test(url)?url:'');$('compat').setAttribute('aria-pressed',String(!!S.compat));starState();}
+function searchTerm(u){try{const x=new URL(u);for(const E of Object.values(ENGINES)){if(E.host.test(x.hostname)&&x.pathname===E.path&&x.searchParams.has(E.param))return x.searchParams.get(E.param);}}catch{}return null;}
+function closeTab(t){
+ if(!tabs.includes(t))return;
+ if(t.url)closed.push({url:t.url,title:t.title,group:t.group,pinned:t.pinned});
+ if(closed.length>30)closed.shift();
+ const wasCurrent=t===current,idx=tabs.indexOf(t);
+ tabs.splice(idx,1);
+ t.frame?.remove();t.frame=null;
+ // Animate only the tab chrome; never wait to switch the actual page.
+ const el=t.el;
+ el.style.setProperty('--sb-exit-width',Math.max(0,el.getBoundingClientRect().width)+'px');
+ el.classList.remove('sb-tab-enter');
+ el.classList.add('sb-tab-exit');
+ const removeEl=()=>{if(el.isConnected)el.remove();};
+ el.addEventListener('animationend',e=>{if(e.target===el)removeEl();},{once:true});
+ setTimeout(removeEl,280); // Also handles reduced-motion preferences.
+ if(t.pinned)savePins();
+ if(!tabs.length){current=null;newTab();return;}
+ if(wasCurrent)selectTab(tabs[Math.min(idx,tabs.length-1)]);else syncInd();
+}
+function closeOthers(t){for(const x of [...tabs])if(x!==t&&!x.pinned)closeTab(x);}
+function reopen(){const data=closed.pop();if(data){const t=newTab(data.url,false,{title:data.title,group:data.group});if(data.pinned)setPinned(t,true);}else toast('No recently closed tabs');}
+function sleepTab(t){if(t===current||!t.frame)return;t.frame.remove();t.frame=null;t.sleeping=true;t.el.classList.add('sleep');}
+setInterval(()=>{if(+S.sleep<=0)return;for(const t of tabs)if(t!==current&&t.frame&&Date.now()-t.last>+S.sleep*60000)sleepTab(t);},30000);
+function starState(){let yes=!!current?.url&&BM.some(b=>b.url===current.url);$('star').textContent=yes?'★':'☆';$('star').classList.toggle('on',yes);}
+$('star').onclick=()=>{if(!current?.url){toast('Open a page before bookmarking');return;}if(BM.some(b=>b.url===current.url))BM=BM.filter(b=>b.url!==current.url);else{BM.push({url:current.url,title:current.title,icon:favicon(current.url)});toast('★ Bookmarked');}saveBM();starState();renderBM();};
+function back(){if(current.historyIndex<=0)return;current.historyIndex--;navigate(current,current.history[current.historyIndex],false);}
+function forward(){if(current.historyIndex>=current.history.length-1)return;current.historyIndex++;navigate(current,current.history[current.historyIndex],false);}
+function reload(){if(current?.url){makeFrame(current,current.url);$('rl').classList.remove('spin');void $('rl').offsetWidth;$('rl').classList.add('spin');}}
+// Apple iOS Home Screen apps open links outside the manifest's scope in
+// SFSafariViewController. Use a REAL hyperlink so the OS can show its Done button.
+function syncSafariLink(anchor,url){
+ const safe=/^https?:\/\//i.test(url||'')?url:'';
+ anchor.href=safe||'#';
+ if(IS_APPLE_HOME_APP)anchor.removeAttribute('target');
+ else anchor.target='_blank';
+ anchor.setAttribute('aria-disabled',String(!safe));
+}
+function updateSafariFallback(){
+ const t=current;
+ const target=t?.safariTarget||t?.url||'';
+ const show=IS_APPLE_HOME_APP && !!t?.safariProblem && /^https?:\/\//i.test(target);
+ $('safariFallback').hidden=!show;
+ syncSafariLink($('safariOpen'),show?target:'');
+ $('safariFallback').querySelector('h2').textContent=show&&youtubeInfo(target)?'YouTube opens in Safari':"This page isn't displaying correctly";
+ $('safariRetry').hidden=show&&!!youtubeInfo(target);
+ $('safariDismiss').textContent=show&&!!youtubeInfo(target)?'Stay in Secure Browser':'Keep this page';
+ if(show)$('safariDetail').textContent=t.safariProblem+(youtubeInfo(target)?'':' Open the original website in Safari instead.');
+}
+function showSafariFallback(tab,reason){
+ if(!IS_APPLE_HOME_APP || !tab || !/^https?:\/\//i.test(tab.url))return;
+ tab.safariProblem=String(reason||'The page did not load correctly.').slice(0,240);
+ if(tab===current)updateSafariFallback();
+}
+$('external').addEventListener('click', e=>{
+ if(!current?.url||!/^https?:\/\//i.test(current.url))e.preventDefault();
+});
+$('safariRetry').onclick=()=>{
+ if(!current)return;
+ current.safariProblem='';updateSafariFallback();makeFrame(current,current.url);
+};
+$('safariDismiss').onclick=()=>{
+ if(!current)return;current.safariProblem='';updateSafariFallback();
+};
+$('compat').onclick=()=>{
+ S.compat=!S.compat;save();applyTheme();
+ tabs.forEach(t=>{if(t.frame&&t.url)makeFrame(t,t.url)});
+ toast(S.compat?'Proxy mode ON — routing pages through your Netlify proxy':'Direct iframe mode ON — some sites will block embedding');
+};
+let menuVisible=false;
+function hideMenu(){$('tmenu').classList.remove('on');menuVisible=false;}
+function tabMenu(e,t){const m=$('tmenu');m.replaceChildren();const add=(title,func,disabled=false)=>{const d=document.createElement('div');d.className='mi'+(disabled?' dis':'');d.textContent=title;d.onclick=()=>{if(disabled)return;hideMenu();func();};m.append(d);};const sep=()=>{const d=document.createElement('div');d.className='msep';m.append(d);};
+ add('New tab to the right',()=>{const n=newTab();reorder(n,t,true);});add('Reload',()=>navigate(t,t.url,false),!t.url);add('Duplicate',()=>{const n=newTab(t.url);reorder(n,t,true);},!t.url);
+ add(t.pinned?'Unpin tab':'Pin tab',()=>setPinned(t,!t.pinned),!t.url);add('Sleep tab',()=>sleepTab(t),t===current||!t.frame);sep();
+ const dots=document.createElement('div');dots.className='mdots';const label=document.createElement('span');label.textContent='Group';label.style.cssText='font-size:12px;opacity:.7';dots.append(label);
+ for(const g of ['none',...Object.keys(groupColors)]){const dot=document.createElement('i');dot.title=g;dot.className=(g==='none'?'none ':'')+((t.group||'none')===g?'on':'');if(g!=='none')dot.style.background=groupColors[g];dot.onclick=()=>{setGroup(t,g==='none'?null:g);hideMenu();if(t.pinned)savePins();};dots.append(dot);}m.append(dots);sep();
+ add('Reopen closed tab',reopen,!closed.length);add('Close tab',()=>closeTab(t));add('Close other tabs',()=>closeOthers(t),tabs.length<=1);add('Close tabs to the right',()=>{tabs.slice(tabs.indexOf(t)+1).filter(x=>!x.pinned).forEach(closeTab)});
+ if(t.group)add('Close all '+t.group+' tabs',()=>{tabs.filter(x=>x.group===t.group).forEach(closeTab)});
+ m.classList.add('on');m.style.left=Math.max(5,Math.min(e.clientX,innerWidth-m.offsetWidth-8))+'px';m.style.top=Math.max(5,Math.min(e.clientY,innerHeight-m.offsetHeight-8))+'px';menuVisible=true;}
+document.addEventListener('pointerdown',e=>{if(menuVisible&&!$('tmenu').contains(e.target))hideMenu();if($('bmp').classList.contains('on')&&!$('bmp').contains(e.target)&&e.target!==$('bmb'))$('bmp').classList.remove('on');});
+const pops=()=>{$('bmp').classList.remove('on');};
+$('bmb').onclick=()=>{renderBM();$('bmp').classList.toggle('on');};
+function closePanel(){setEdit(false);$('panel').classList.remove('on');}
+$('gear').onclick=()=>{$('panel').classList.toggle('on');pops();};$('cz').onclick=()=>{$('panel').classList.add('on');};$('px').onclick=closePanel;
+function setZen(isZen){document.body.classList.toggle('zen',isZen);if(isZen){closePanel();pops();hideMenu();}}
+$('zenbtn').onclick=()=>setZen(false);
+$('nt').onclick=()=>newTab();$('bk').onclick=back;$('fw').onclick=forward;$('rl').onclick=reload;
+$('url').onkeydown=e=>{if(e.key==='Enter'){e.preventDefault();go(sugItems[selSug]?.value||$('url').value);}else if(e.key==='Escape')hideSuggestions();};
+$('sf').onsubmit=e=>{e.preventDefault();go($('sq').value);};
+// Only speech recognition that really exists in the browser is shown.
+const Speech=window.SpeechRecognition||window.webkitSpeechRecognition;
+if(!Speech){$('umic').remove();$('smic').remove();}else{let recognition=null;function mic(){if(recognition){recognition.stop();recognition=null;return;}recognition=new Speech();recognition.lang=navigator.language||'en-US';recognition.interimResults=false;recognition.maxAlternatives=1;recognition.onresult=e=>{const text=e.results[0][0].transcript;recognition=null;go(text)};recognition.onerror=()=>{recognition=null;toast('Voice search unavailable')};recognition.onend=()=>{recognition=null;};recognition.start();toast('Listening…');}
+ $('umic').onclick=mic;$('smic').onclick=mic;}
+// Search recommendations: local history/bookmarks plus live Secure Search suggestions.
+const suggestions=$('sug');let sugItems=[],selSug=-1,sugTimer=null,sugSerial=0;
+function hideSuggestions(){clearTimeout(sugTimer);sugSerial++;suggestions.classList.remove('on');sugItems=[];selSug=-1;}
+function localSuggestions(q){
+ const choices=[],seen=new Set();
+ const add=(kind,value,label)=>{if(!value)return;const key=kind+':'+value.toLowerCase();if(seen.has(key))return;seen.add(key);choices.push({kind,value,label});};
+ add('search',q,'Search Secure Search for “'+q+'”');
+ for(const text of recentQueries)if(text.toLowerCase().includes(q.toLowerCase())&&text.toLowerCase()!==q.toLowerCase())add('search',text,'Recent search · '+text);
+ const visited=[];for(const t of tabs){for(const url of t.history)if(url&&!isSecureSearchUrl(url))visited.push({url,title:t.title});}
+ for(const b of [...BM,...visited,...DEFAULT_LINKS.map(([title,url])=>({title,url}))]){
+  if(!(b.title||'').toLowerCase().includes(q.toLowerCase())&&!b.url.toLowerCase().includes(q.toLowerCase()))continue;
+  add('url',b.url,(b.title||hostLabel(b.url))+' · '+b.url);
+ }
+ return choices.slice(0,9);
+}
+function renderSuggestions(choices){sugItems=choices.slice(0,9);selSug=-1;suggestions.replaceChildren();
+ if(!sugItems.length){suggestions.classList.remove('on');return;}
+ const rect=$('urlwrap').getBoundingClientRect();suggestions.style.left=rect.left+'px';suggestions.style.top=(rect.bottom+5)+'px';suggestions.style.width=rect.width+'px';
+ sugItems.forEach((b,i)=>{const el=document.createElement('div');el.className='sg';
+  const icon=document.createElement('span');icon.className='sg-icon';icon.textContent=b.kind==='url'?'↗':'⌕';
+  const label=document.createElement('span');label.className='sg-label';label.textContent=b.label;
+  el.append(icon,label);el.onpointerdown=e=>{e.preventDefault();go(b.value)};suggestions.append(el);});
+ suggestions.classList.add('on');
+}
+function showSuggestions(){clearTimeout(sugTimer);const serial=++sugSerial;const q=$('url').value.trim().slice(0,160);
+ if(!q){hideSuggestions();return;}
+ renderSuggestions(localSuggestions(q));
+ if(q.length<2||q.includes('/')||q.length>100)return;
+ sugTimer=setTimeout(async()=>{
+  try{const resp=await fetch('/api/suggest?q='+encodeURIComponent(q));if(!resp.ok)return;
+   const data=await resp.json();if(serial!==sugSerial||document.activeElement!==$('url')||q!==$('url').value.trim())return;
+   if(!Array.isArray(data.suggestions))return;
+   const list=localSuggestions(q),seen=new Set(list.map(x=>x.value.toLowerCase()));
+   let index=1;for(const suggestion of data.suggestions){const value=String(suggestion||'').trim().slice(0,100);
+    if(value&&!seen.has(value.toLowerCase())){list.splice(index++,0,{kind:'search',value,label:'Suggested · '+value});seen.add(value.toLowerCase());}}
+   renderSuggestions(list);
+  }catch{}},190);
+}
+$('url').addEventListener('input',showSuggestions);
+$('url').addEventListener('focus',()=>{if($('url').value.trim())showSuggestions()});
+$('url').addEventListener('keydown',e=>{if(!['ArrowDown','ArrowUp'].includes(e.key)||!sugItems.length)return;
+ e.preventDefault();selSug=(selSug+(e.key==='ArrowDown'?1:-1)+sugItems.length)%sugItems.length;
+ [...suggestions.children].forEach((el,i)=>el.classList.toggle('on',i===selSug));$('url').value=sugItems[selSug].value;
+});
+$('url').addEventListener('blur',()=>setTimeout(hideSuggestions,180));
+window.addEventListener('resize',()=>{if(suggestions.classList.contains('on')){const r=$('urlwrap').getBoundingClientRect();suggestions.style.left=r.left+'px';suggestions.style.width=r.width+'px';suggestions.style.top=(r.bottom+5)+'px';}});
+// User-selectable theme / search / background / decorative media.
+for(const [key,convert,event] of [['mode',e=>e.value,'change'],['dyn',e=>e.value,'change'],['accent',e=>e.value,'input'],['dim',e=>+e.value,'input'],['blur',e=>+e.value,'input'],['clk',e=>e.checked,'change'],['sleepsel',e=>+e.value,'change']]){
+ const id={mode:'mode',dyn:'dyn',accent:'accent',dim:'dim',blur:'blur',clk:'clock',sleepsel:'sleep'}[key];$(key).addEventListener(event,e=>{S[id]=convert(e.target);save();applyTheme();});}
+for(const choice of document.querySelectorAll('.appearance-choice')){choice.addEventListener('click',()=>{if(S.appearance===choice.dataset.appearance)return;S.appearance=choice.dataset.appearance;save();applyTheme();});}
+$('eng').addEventListener('change',e=>{S.engine=e.target.value;save();applyTheme();});
+$('bgf').onchange=async e=>{const f=e.target.files[0];if(!f)return;if(!/^(image|video)\//.test(f.type))return toast('Choose an image or video');try{await dbPut(f);await loadBg();toast('Background changed');}catch{toast('Background cannot be saved on this device');}e.target.value='';};
+$('bgx').onclick=async()=>{await dbDel().catch(()=>{});await loadBg();};
+$('resetApp').onclick=async()=>{
+ if(!confirm("Clear Secure Browser bookmarks, settings, pinned tabs, wallpaper, and saved home-screen items on this device? It cannot clear other websites' cookies or Safari history."))return;
+ try{const dbi=await db();await new Promise(resolve=>{const tx=dbi.transaction('f','readwrite');tx.objectStore('f').clear();tx.oncomplete=tx.onerror=resolve;});dbi.close();}catch{}
+ try{localStorage.removeItem('sb-web-v2');localStorage.removeItem('sbm-web-v2');localStorage.removeItem('sb-appearance-v1');}catch{}
+ location.reload();
+};
+// Image drag into address bar, and simple full-screen image viewer retained.
+const iv=$('iv'),ivImg=$('ivimg');let ivUrl='';function showImage(url){ivUrl=url;ivImg.src=url;iv.classList.add('on');}
+$('ivx').onclick=()=>iv.classList.remove('on');iv.onclick=e=>{if(e.target===iv)iv.classList.remove('on')};$('ivtab').onclick=()=>{iv.classList.remove('on');newTab(ivUrl)};ivImg.onclick=()=>{ivImg.style.transform=ivImg.style.transform==='scale(2)'?'scale(1)':'scale(2)';};
+for(const e of ['dragenter','dragover'])$('urlwrap').addEventListener(e,ev=>{ev.preventDefault();$('urlwrap').classList.add('drag')});
+$('urlwrap').addEventListener('dragleave',()=>{$('urlwrap').classList.remove('drag')});$('urlwrap').addEventListener('drop',e=>{e.preventDefault();$('urlwrap').classList.remove('drag');const file=e.dataTransfer.files[0];if(file&&file.type.startsWith('image/')){const url=URL.createObjectURL(file);showImage(url);return;}const text=e.dataTransfer.getData('text/uri-list')||e.dataTransfer.getData('text/plain');if(text)go(text);});
+// Application keyboard shortcuts (inside cross-origin frames, Safari owns the keys).
+document.addEventListener('keydown',e=>{if(e.key==='Escape'){hideMenu();pops();closePanel();iv.classList.remove('on');}
+ if(e.altKey&&!e.ctrlKey&&e.key.toLowerCase()==='z'){e.preventDefault();setZen(!document.body.classList.contains('zen'));}
+ if((e.ctrlKey||e.metaKey)&&!e.shiftKey){const k=e.key.toLowerCase();if(k==='t'){e.preventDefault();newTab()}else if(k==='w'){e.preventDefault();closeTab(current)}else if(k==='l'){e.preventDefault();$('url').focus();$('url').select()}else if(k==='r'){e.preventDefault();reload()}else if(k==='d'){e.preventDefault();$('star').click()}}});
+function fillEngines(){const el=$('eng');el.replaceChildren();for(const [k,v] of Object.entries(ENGINES)){const o=document.createElement('option');o.value=k;o.textContent=v.name;el.append(o);}}
+fillEngines();
+
+// ---- Start page items (images, GIFs, videos, text)
+let selId = null, editMode = false, rtk = 0, itemURLs = [];
+const clamp = (v, a, b) => Math.min(b, Math.max(a, v));
+const FONTS = ['Segoe UI', 'Arial', 'Georgia', 'Times New Roman', 'Courier New', 'Impact', 'Comic Sans MS', 'Trebuchet MS', 'Verdana', 'Palatino Linotype', 'cursive', 'monospace'];
+function setEdit(v) { editMode = v; $('editmode').checked = v; $('layer').classList.toggle('edit', v); }
+function styleItem(el, it) {
+  el.style.left = it.x + '%'; el.style.top = it.y + '%'; el.style.opacity = it.op / 100; el.style.transform = `translate(-50%,-50%) rotate(${it.rot}deg)`;
+  if (it.type === 'text') { const t = el.firstChild; t.textContent = it.text;
+    Object.assign(el.style, { width: 'auto', maxWidth: '92%', color: it.color, fontFamily: `'${it.font}', sans-serif`, fontSize: it.fs + 'px', fontWeight: it.bold ? '700' : '400', fontStyle: it.italic ? 'italic' : 'normal',
+      letterSpacing: it.ls + 'px', textAlign: it.align, whiteSpace: 'pre-wrap', lineHeight: '1.2', background: it.bgOn ? it.bg : 'transparent', padding: it.bgOn ? '8px 18px' : '0', borderRadius: it.br + 'px',
+      textShadow: it.glow ? `0 0 ${it.gb}px ${it.gc}, 0 0 ${it.gb * 2}px ${it.gc}` : 'none' }); }
+  else { el.style.width = it.w + '%'; const m = el.firstChild; m.style.borderRadius = it.r + 'px'; }
+  el.classList.toggle('sel', it.id === selId);
+}
+function wireItem(el, it) {
+  el.addEventListener('pointerdown', e => { if (!editMode) return; e.preventDefault(); selectItem(it.id);
+    const R = $('start').getBoundingClientRect(), sx = e.clientX, sy = e.clientY, ox = it.x, oy = it.y; el.setPointerCapture(e.pointerId);
+    const mv = ev => { it.x = clamp(ox + (ev.clientX - sx) / R.width * 100, 0, 100); it.y = clamp(oy + (ev.clientY - sy) / R.height * 100, 0, 100); el.style.left = it.x + '%'; el.style.top = it.y + '%'; };
+    const up = () => { el.removeEventListener('pointermove', mv); el.removeEventListener('pointerup', up); save(); };
+    el.addEventListener('pointermove', mv); el.addEventListener('pointerup', up); });
+  el.addEventListener('wheel', e => { if (!editMode) return; e.preventDefault(); const f = e.deltaY < 0 ? 1.06 : 0.94;
+    if (it.type === 'text') it.fs = Math.round(clamp(it.fs * f, 10, 240)); else it.w = clamp(+(it.w * f).toFixed(1), 2, 100);
+    styleItem(el, it); save(); if (selId === it.id) renderEditor(); }, { passive: false });
+}
+async function renderItems() {
+  const tk = ++rtk, els = [], urls = [];
+  for (const it of S.items) { const el = document.createElement('div'); el.className = 'si'; el.dataset.id = it.id;
+    if (it.type === 'text') el.appendChild(document.createElement('div'));
+    else { const b = await dbGetK('item:' + it.id); if (!b) continue; const u = URL.createObjectURL(b); urls.push(u);
+      const m = document.createElement(it.type === 'video' ? 'video' : 'img'); m.src = u; m.draggable = false;
+      if (it.type === 'video') { m.autoplay = true; m.loop = true; m.muted = true; m.playsInline = true; } el.appendChild(m); }
+    styleItem(el, it); wireItem(el, it); els.push(el); }
+  if (tk !== rtk) { urls.forEach(u => URL.revokeObjectURL(u)); return; }
+  itemURLs.forEach(u => URL.revokeObjectURL(u)); itemURLs = urls; $('layer').replaceChildren(...els);
+}
+const elOf = it => $('layer').querySelector(`[data-id="${it.id}"]`);
+const upd = it => { const el = elOf(it); if (el) styleItem(el, it); save(); };
+function selectItem(id) { selId = id; document.querySelectorAll('.si').forEach(e => e.classList.toggle('sel', e.dataset.id === id)); renderList(); renderEditor(); }
+function renderList() { const l = $('itlist'); l.innerHTML = '';
+  S.items.forEach(it => { const d = document.createElement('div'); d.className = 'it' + (it.id === selId ? ' on' : ''); d.innerHTML = '<span></span><button class="btn">✕</button>';
+    d.querySelector('span').textContent = (it.type === 'text' ? '🔤 ' + ((it.text || '').split('\n')[0].slice(0, 24) || '(empty)') : (it.type === 'video' ? '🎬 ' : '🖼 ') + (it.name || 'media'));
+    d.onclick = () => selectItem(it.id); d.querySelector('button').onclick = e => { e.stopPropagation(); delItem(it.id); }; l.appendChild(d); }); }
+async function delItem(id) { S.items = S.items.filter(i => i.id !== id); try { await dbDelK('item:' + id); } catch {} if (selId === id) selId = null; save(); await renderItems(); renderList(); renderEditor(); }
+function renderEditor() { const E = $('ited'); E.innerHTML = ''; const it = S.items.find(i => i.id === selId); if (!it) return;
+  const row = (lbl, el) => { const d = document.createElement('div'); d.className = 'ed'; const s = document.createElement('span'); s.textContent = lbl; d.append(s, el); E.appendChild(d); };
+  const rng = (lbl, k, min, max, step = 1) => { const e = document.createElement('input'); e.type = 'range'; Object.assign(e, { min, max, step }); e.value = it[k]; e.oninput = () => { it[k] = +e.value; upd(it); }; row(lbl, e); };
+  const col = (lbl, k) => { const e = document.createElement('input'); e.type = 'color'; e.value = it[k]; e.oninput = () => { it[k] = e.value; upd(it); }; row(lbl, e); };
+  const chk = (lbl, k) => { const e = document.createElement('input'); e.type = 'checkbox'; e.checked = !!it[k]; e.onchange = () => { it[k] = e.checked; upd(it); }; row(lbl, e); };
+  const sel = (lbl, k, opts) => { const e = document.createElement('select'); opts.forEach(o => e.add(new Option(o, o))); e.value = it[k]; e.onchange = () => { it[k] = e.value; upd(it); }; row(lbl, e); };
+  if (it.type === 'text') { const t = document.createElement('textarea'); t.rows = 3; t.value = it.text; t.oninput = () => { it.text = t.value; upd(it); renderList(); }; row('Text', t);
+    sel('Font', 'font', FONTS); rng('Size', 'fs', 10, 240); col('Color', 'color'); chk('Bold', 'bold'); chk('Italic', 'italic'); rng('Spacing', 'ls', -2, 24, 0.5); sel('Align', 'align', ['left', 'center', 'right']);
+    chk('Glow', 'glow'); col('Glow color', 'gc'); rng('Glow size', 'gb', 0, 40); chk('Backdrop', 'bgOn'); col('Backdrop color', 'bg'); rng('Corners', 'br', 0, 60); }
+  else { rng('Size', 'w', 2, 100, 0.5); rng('Corners', 'r', 0, 200); }
+  rng('Opacity', 'op', 5, 100); rng('Rotate', 'rot', -180, 180);
+}
+const base = { x: 50, y: 50, op: 100, rot: 0 };
+async function addMedia(f, type) { if (!f) return; if (!f.type.startsWith(type + '/')) return toast('Wrong file type');
+  if (f.size > 40e6) return toast('That file is too big for reliable browser storage (40 MB max)');
+  const id = Date.now().toString(36) + Math.random().toString(36).slice(2, 5); await dbPutK('item:' + id, f);
+  S.items.push({ ...base, id, type: type === 'video' ? 'video' : 'img', name: f.name, w: type === 'video' ? 30 : 20, r: 12 }); selId = id; save(); await renderItems(); renderList(); renderEditor(); setEdit(true); }
+$('addimg').onchange = async e => { await addMedia(e.target.files[0], 'image'); e.target.value = ''; };
+$('addvid').onchange = async e => { await addMedia(e.target.files[0], 'video'); e.target.value = ''; };
+$('addtxt').onclick = async () => { const id = Date.now().toString(36);
+  S.items.push({ ...base, id, type: 'text', y: 22, text: 'Your text', color: '#ffffff', font: 'Segoe UI', fs: 48, bold: false, italic: false, ls: 0, align: 'center', glow: false, gc: '#4f8cff', gb: 8, bgOn: false, bg: '#000000', br: 14 });
+  selId = id; save(); await renderItems(); renderList(); renderEditor(); setEdit(true); };
+$('editmode').onchange = e => setEdit(e.target.checked);
+
+
+// Initialize the supplied start page and restore saved pinned tabs.
+(async function start(){renderTiles();applyTheme();await Promise.allSettled([loadBg(),renderItems()]);renderList();
+ const pins=[...S.pins];for(const p of pins){if(p&&p.url)newTab(p.url,true,{sleeping:true,pinned:true,title:p.title,group:p.group});}
+ newTab();
+})();
+</script></body></html>
